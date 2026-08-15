@@ -93,37 +93,46 @@ struct PixelCanvas {
 }
 
 enum PixelArt {
-    /// The world is exactly half the on-screen strip, so everything lands on a 2x pixel grid.
-    static let worldWidth = 360
-    static let worldHeight = 42
     static let characterWidth = 16
     static let characterHeight = 20
-    /// Floor below, colonnade band above. The band stays shallow so the actors get most
-    /// of the strip to move around in.
-    static let horizonY = 33
-    /// The plane the actors' feet rest on.
-    static let groundY = 12
     static let fountainWidth = 28
     static let fountainHeight = 18
-    static let fountainCenterX = 180
 
-    static func plazaBackground() -> SKTexture {
-        var canvas = PixelCanvas(width: worldWidth, height: worldHeight, fill: Palette.stone)
-        canvas.fill(0, horizonY, worldWidth, worldHeight - horizonY, Palette.sky)
-        canvas.fill(0, horizonY, worldWidth, 3, Palette.skyLight)
-        for y in stride(from: 0, to: horizonY, by: 7) {
-            for x in stride(from: 0, to: worldWidth, by: 8) {
-                let grout = ((x / 8) + (y / 7)) % 2 == 0 ? Palette.stoneDark : Palette.stoneLight
+    static func plazaBackground(_ layout: PlazaLayout) -> SKTexture {
+        let width = layout.worldWidth
+        let height = layout.worldHeight
+        let horizon = layout.horizonY
+        var canvas = PixelCanvas(width: width, height: height, fill: Palette.stone)
+        canvas.fill(0, horizon, width, height - horizon, Palette.sky)
+        canvas.fill(0, horizon, width, 3, Palette.skyLight)
+        for y in stride(from: 0, to: horizon, by: 8) {
+            for x in stride(from: 0, to: width, by: 8) {
+                let grout = ((x / 8) + (y / 8)) % 2 == 0 ? Palette.stoneDark : Palette.stoneLight
                 canvas.fill(x, y, 8, 1, grout)
-                canvas.fill(x, y, 1, 7, grout)
+                canvas.fill(x, y, 1, 8, grout)
             }
         }
-        for x in stride(from: 6, to: worldWidth - 6, by: 30) {
-            drawColumn(&canvas, x: x)
+        switch layout {
+        case .strip:
+            for x in stride(from: 6, to: width - 6, by: 30) {
+                drawColumn(&canvas, x: x, baseY: horizon - 2, topY: height)
+            }
+            canvas.fill(46, 4, 12, 4, Palette.olive)
+            canvas.fill(212, 3, 10, 4, Palette.olive)
+            canvas.fill(312, 5, 14, 4, Palette.olive)
+        case .courtyard:
+            for x in stride(from: 8, to: width - 8, by: 24) {
+                drawColumn(&canvas, x: x, baseY: horizon - 2, topY: height)
+            }
+            for y in stride(from: 24, to: horizon - 8, by: 32) {
+                drawColumn(&canvas, x: 8, baseY: y, topY: min(y + 36, height))
+                drawColumn(&canvas, x: width - 16, baseY: y, topY: min(y + 36, height))
+            }
+            canvas.fill(36, 36, 16, 8, Palette.olive)
+            canvas.fill(188, 48, 14, 7, Palette.olive)
+            canvas.fill(52, 140, 12, 6, Palette.olive)
+            canvas.fill(176, 128, 18, 8, Palette.olive)
         }
-        canvas.fill(46, 4, 12, 4, Palette.olive)
-        canvas.fill(212, 3, 10, 4, Palette.olive)
-        canvas.fill(312, 5, 14, 4, Palette.olive)
         return canvas.texture()
     }
 
@@ -239,13 +248,12 @@ enum PixelArt {
         return canvas.texture()
     }
 
-    private static func drawColumn(_ canvas: inout PixelCanvas, x: Int) {
-        let base = horizonY - 2
-        let shaft = worldHeight - base - 3
-        canvas.fill(x, base, 8, 2, Palette.columnShadow)
-        canvas.fill(x + 1, base + 2, 6, shaft, Palette.column)
-        canvas.fill(x + 1, base + 2, 1, shaft, Palette.columnShadow)
-        canvas.fill(x, worldHeight - 3, 8, 2, Palette.column)
-        canvas.fill(x, worldHeight - 1, 8, 1, Palette.roof)
+    private static func drawColumn(_ canvas: inout PixelCanvas, x: Int, baseY: Int, topY: Int) {
+        let shaft = max(4, topY - baseY - 3)
+        canvas.fill(x, baseY, 8, 2, Palette.columnShadow)
+        canvas.fill(x + 1, baseY + 2, 6, shaft, Palette.column)
+        canvas.fill(x + 1, baseY + 2, 1, shaft, Palette.columnShadow)
+        canvas.fill(x, baseY + 2 + shaft, 8, 2, Palette.column)
+        canvas.fill(x, baseY + 4 + shaft, 8, 1, Palette.roof)
     }
 }

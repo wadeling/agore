@@ -7,10 +7,19 @@ final class StatusItemController: NSObject {
     private let panel: PlazaPanelController
     private let store: PresenceStore
     private let onInstall: () -> Void
+    private let onNickname: (String) -> Void
+    private let onToken: (String) -> Void
 
-    init(store: PresenceStore, onInstall: @escaping () -> Void) {
+    init(
+        store: PresenceStore,
+        onInstall: @escaping () -> Void,
+        onNickname: @escaping (String) -> Void,
+        onToken: @escaping (String) -> Void
+    ) {
         self.store = store
         self.onInstall = onInstall
+        self.onNickname = onNickname
+        self.onToken = onToken
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
         panel = PlazaPanelController(store: store, onInstall: onInstall)
         super.init()
@@ -64,6 +73,24 @@ final class StatusItemController: NSObject {
 
         menu.addItem(.separator())
 
+        let nick = NSMenuItem(
+            title: "Nickname…",
+            action: #selector(editNickname),
+            keyEquivalent: ""
+        )
+        nick.target = self
+        menu.addItem(nick)
+
+        let token = NSMenuItem(
+            title: "Plaza Token…",
+            action: #selector(editToken),
+            keyEquivalent: ""
+        )
+        token.target = self
+        menu.addItem(token)
+
+        menu.addItem(.separator())
+
         let hooks = NSMenuItem(
             title: store.hooksInstalled ? "Hooks Installed" : "Install Hooks",
             action: store.hooksInstalled ? nil : #selector(installHooks),
@@ -99,5 +126,52 @@ final class StatusItemController: NSObject {
 
     @objc private func installHooks() {
         onInstall()
+    }
+
+    @objc private func editNickname() {
+        prompt(
+            title: "Nickname",
+            info: "Shown under your pixel person on every plaza.",
+            value: ClientIdentity.displayName,
+            secure: false
+        ) { [weak self] text in
+            self?.onNickname(text)
+        }
+    }
+
+    @objc private func editToken() {
+        prompt(
+            title: "Plaza Token",
+            info: "Must match AGORE_TOKEN on the plaza server.",
+            value: ClientIdentity.plazaToken,
+            secure: true
+        ) { [weak self] text in
+            self?.onToken(text)
+        }
+    }
+
+    private func prompt(title: String, info: String, value: String, secure: Bool, submit: @escaping (String) -> Void) {
+        NSApp.activate(ignoringOtherApps: true)
+        let alert = NSAlert()
+        alert.messageText = title
+        alert.informativeText = info
+        alert.addButton(withTitle: "OK")
+        alert.addButton(withTitle: "Cancel")
+
+        let field: NSTextField
+        if secure {
+            field = NSSecureTextField(frame: NSRect(x: 0, y: 0, width: 280, height: 24))
+        } else {
+            field = NSTextField(frame: NSRect(x: 0, y: 0, width: 280, height: 24))
+        }
+        field.stringValue = value
+        field.isEditable = true
+        field.isSelectable = true
+        field.usesSingleLineMode = true
+        alert.accessoryView = field
+        alert.window.initialFirstResponder = field
+        if alert.runModal() == .alertFirstButtonReturn {
+            submit(field.stringValue)
+        }
     }
 }

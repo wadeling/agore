@@ -2,17 +2,19 @@ import SpriteKit
 import AgoreCore
 
 public final class PlazaScene: SKScene {
+    private let layout: PlazaLayout
+    private let anchors: PlazaAnchors
     private var actors: [String: PlazaActor] = [:]
     private var slots: [String: Int] = [:]
     private var sleeper: SKNode?
-    private let anchors = PlazaAnchors()
     private var tickAccum: TimeInterval = 0
     private var lastTime: TimeInterval = 0
 
-    public override init() {
-        super.init(size: CGSize(width: PixelArt.worldWidth, height: PixelArt.worldHeight))
-        // The plaza view is an exact 2x multiple of the world, so aspectFit keeps
-        // every pixel on an integer boundary instead of smearing it.
+    public init(layout: PlazaLayout) {
+        self.layout = layout
+        self.anchors = PlazaAnchors(layout: layout)
+        super.init(size: layout.worldSize)
+        // Strip is 2x, courtyard is 3x of an integer world, so aspectFit stays crisp.
         scaleMode = .aspectFit
         anchorPoint = .zero
         backgroundColor = .clear
@@ -24,26 +26,28 @@ public final class PlazaScene: SKScene {
     }
 
     public override func didMove(to view: SKView) {
-        guard children.isEmpty else { return }
-
-        let ground = SKSpriteNode(texture: PixelArt.plazaBackground())
-        ground.size = size
-        ground.position = CGPoint(x: size.width / 2, y: size.height / 2)
-        ground.zPosition = 0
-        ground.alpha = AgoreConstants.groundOpacity
-        ground.texture?.filteringMode = .nearest
-        addChild(ground)
-
-        addFountain()
-        showSleeper()
+        if childNode(withName: "ground") == nil {
+            let ground = SKSpriteNode(texture: PixelArt.plazaBackground(layout))
+            ground.name = "ground"
+            ground.size = size
+            ground.position = CGPoint(x: size.width / 2, y: size.height / 2)
+            ground.zPosition = 0
+            ground.alpha = AgoreConstants.groundOpacity
+            ground.texture?.filteringMode = .nearest
+            addChild(ground)
+            addFountain()
+        }
+        if actors.isEmpty {
+            showSleeper()
+        }
     }
 
     private func addFountain() {
         let node = SKSpriteNode(texture: PixelArt.fountainFrame(0))
         node.size = CGSize(width: PixelArt.fountainWidth, height: PixelArt.fountainHeight)
         node.position = CGPoint(
-            x: CGFloat(PixelArt.fountainCenterX),
-            y: CGFloat(PixelArt.groundY - 3) + CGFloat(PixelArt.fountainHeight) / 2
+            x: layout.fountainCenter.x,
+            y: layout.fountainCenter.y + CGFloat(PixelArt.fountainHeight) / 2 - 4
         )
         node.zPosition = 5
         node.alpha = AgoreConstants.groundOpacity
@@ -88,12 +92,10 @@ public final class PlazaScene: SKScene {
         }
     }
 
-    /// An empty plaza still gets a caretaker, asleep by the fountain, so the strip reads as
-    /// "nothing running" rather than "nothing working".
     private func showSleeper() {
         guard sleeper == nil else { return }
         let node = SKNode()
-        node.position = CGPoint(x: 138, y: CGFloat(PixelArt.groundY))
+        node.position = anchors.sleeper
         node.zPosition = 9
 
         let body = SKSpriteNode(texture: PixelArt.sleeper(frame: 0))
@@ -139,8 +141,6 @@ public final class PlazaScene: SKScene {
         ]))
     }
 
-    /// Positions come from a slot the actor keeps for as long as it is on stage, so two
-    /// agents never share a spot (a plain id hash used to collide and stack them).
     private func slot(for id: String) -> Int {
         if let slot = slots[id] { return slot }
         let taken = Set(slots.values)

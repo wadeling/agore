@@ -12,7 +12,7 @@ XCODEBUILD := xcodebuild \
 	-configuration $(CONFIGURATION) \
 	-derivedDataPath $(DERIVED_DATA)
 
-.PHONY: all build test run clean gen-project icons
+.PHONY: all build test run clean gen-project icons plaza plaza-down plaza-test
 
 all: build
 
@@ -27,8 +27,8 @@ run: build
 	@sleep 0.3
 	open "$(APP)"
 	@echo ""
-	@echo "First launch opens a window; close it and Agore lives in the menu bar."
-	@echo "Left-click the pixel person to show the plaza, right-click for Always on Top."
+	@echo "Dock / first launch: square window (centered)."
+	@echo "Menu bar icon: floating strip. Right-click for Always on Top / token."
 
 icons:
 	python3 Scripts/generate_icons.py
@@ -39,3 +39,17 @@ clean:
 
 gen-project:
 	python3 Scripts/gen_pbxproj.py
+
+plaza:
+	@test -f .env || (echo "Copy .env.example to .env and set AGORE_TOKEN first."; exit 1)
+	bash Scripts/gen_tls.sh
+	docker compose up --build -d
+	@echo "Plaza HTTPS on https://127.0.0.1:8081  (self-signed, for Cloudflare)"
+	@echo "Client URL: wss://agore.bytebar.dev/v1/plaza"
+	@echo "Set the same token in the app: right-click → Plaza Token…"
+
+plaza-down:
+	docker compose down
+
+plaza-test:
+	cd server && go test ./...

@@ -87,11 +87,10 @@ final class PlazaActor {
             small: isSubagent
         )
         node.texture = texture
-        // Busy agents pace the plaza; seated ones stay put and breathe instead.
         if kind == .running || kind == .thinking, node.action(forKey: "walk") == nil {
             let wander = CGPoint(
                 x: node.position.x + CGFloat.random(in: -26...26),
-                y: node.position.y + CGFloat.random(in: -3...3)
+                y: node.position.y + CGFloat.random(in: anchors.layout == .strip ? -3...3 : -18...18)
             )
             node.run(.move(to: anchors.walkable(wander), duration: 1.4), withKey: "walk")
         }
@@ -99,57 +98,81 @@ final class PlazaActor {
 }
 
 struct PlazaAnchors {
-    /// The strip is one row deep, so slots are spread along x and only shift slightly in y.
-    static let restingY = CGFloat(PixelArt.groundY + PixelArt.characterHeight / 2)
-    static let strollingY = restingY - 3
+    let layout: PlazaLayout
+    let benches: [CGPoint]
+    let strolls: [CGPoint]
+    let exits: [CGPoint]
+    let sleeper: CGPoint
 
-    /// Slots alternate left and right of the fountain, so the first arrivals frame it
-    /// instead of standing in the water.
-    static let lanes: [CGFloat] = [138, 222, 92, 268, 46, 314, 20, 340]
-
-    let benches: [CGPoint] = PlazaAnchors.lanes.map {
-        CGPoint(x: $0, y: PlazaAnchors.restingY)
-    }
-    let strolls: [CGPoint] = PlazaAnchors.lanes.map {
-        CGPoint(x: $0 + 10, y: PlazaAnchors.strollingY)
-    }
-    let exits: [CGPoint] = [
-        CGPoint(x: 8, y: PlazaAnchors.restingY),
-        CGPoint(x: CGFloat(PixelArt.worldWidth) - 8, y: PlazaAnchors.restingY),
-    ]
-
-    static let fountainZone: ClosedRange<CGFloat> = 156...204
-
-    /// Keeps a wandering actor on the floor and out of the basin.
-    func walkable(_ point: CGPoint) -> CGPoint {
-        var x = min(max(point.x, 20), CGFloat(PixelArt.worldWidth) - 20)
-        if PlazaAnchors.fountainZone.contains(x) {
-            x = x < CGFloat(PixelArt.fountainCenterX)
-                ? PlazaAnchors.fountainZone.lowerBound
-                : PlazaAnchors.fountainZone.upperBound
+    init(layout: PlazaLayout) {
+        self.layout = layout
+        switch layout {
+        case .strip:
+            let restY = CGFloat(layout.groundY + PixelArt.characterHeight / 2)
+            let lanes: [CGFloat] = [138, 222, 92, 268, 46, 314, 20, 340]
+            benches = lanes.map { CGPoint(x: $0, y: restY) }
+            strolls = lanes.map { CGPoint(x: $0 + 10, y: restY - 3) }
+            exits = [
+                CGPoint(x: 8, y: restY),
+                CGPoint(x: CGFloat(layout.worldWidth) - 8, y: restY),
+            ]
+            sleeper = CGPoint(x: 138, y: CGFloat(layout.groundY))
+        case .courtyard:
+            // Keep the first arrivals around the fountain, well inside the frame.
+            benches = [
+                CGPoint(x: 88, y: 100),
+                CGPoint(x: 152, y: 100),
+                CGPoint(x: 72, y: 128),
+                CGPoint(x: 168, y: 128),
+                CGPoint(x: 96, y: 156),
+                CGPoint(x: 144, y: 156),
+                CGPoint(x: 80, y: 72),
+                CGPoint(x: 160, y: 72),
+            ]
+            strolls = [
+                CGPoint(x: 100, y: 112),
+                CGPoint(x: 140, y: 112),
+                CGPoint(x: 64, y: 100),
+                CGPoint(x: 176, y: 100),
+                CGPoint(x: 108, y: 148),
+                CGPoint(x: 132, y: 148),
+                CGPoint(x: 96, y: 80),
+                CGPoint(x: 144, y: 80),
+            ]
+            exits = [
+                CGPoint(x: 24, y: 32),
+                CGPoint(x: 216, y: 32),
+                CGPoint(x: 24, y: 168),
+                CGPoint(x: 216, y: 168),
+            ]
+            sleeper = CGPoint(x: 88, y: 72)
         }
-        let y = min(
-            max(point.y, PlazaAnchors.strollingY - 2),
-            PlazaAnchors.restingY + 2
-        )
+    }
+
+    func walkable(_ point: CGPoint) -> CGPoint {
+        var x = min(max(point.x, 24), CGFloat(layout.worldWidth) - 24)
+        var y = min(max(point.y, layout.walkMinY), layout.walkMaxY)
+        if layout.fountainZoneX.contains(x), layout.fountainZoneY.contains(y) {
+            x = x < layout.fountainCenter.x
+                ? layout.fountainZoneX.lowerBound
+                : layout.fountainZoneX.upperBound
+        }
         return CGPoint(x: x, y: y)
     }
 
     func spawn() -> CGPoint {
-        exits.randomElement() ?? CGPoint(x: 8, y: PlazaAnchors.restingY)
+        exits.randomElement() ?? CGPoint(x: 24, y: layout.walkMinY)
     }
 
     func spot(for session: AgentSession, slot: Int) -> CGPoint {
-        let lane = slot % PlazaAnchors.lanes.count
-        // Past the first eight the plaza fills a second row nearer the viewer instead of
-        // stacking newcomers on top of the agents already there.
-        let row = (slot / PlazaAnchors.lanes.count) % 2
-        let depth = CGFloat(row) * -4
+        let lane = slot % benches.count
+        let row = (slot / benches.count) % 2
+        let depth = CGFloat(row) * (layout == .strip ? -4 : 16)
         switch session.kind {
         case .reading, .writing, .waiting:
-            return benches[lane].offsetBy(dy: depth)
+            return benches[lane].offsetBy(dx: 0, dy: depth)
         case .thinking, .running:
-            return strolls[lane].offsetBy(dy: depth)
+            return strolls[lane].offsetBy(dx: 0, dy: depth)
         case .idle:
             return exit(near: benches[lane])
         }
@@ -161,7 +184,7 @@ struct PlazaAnchors {
 }
 
 private extension CGPoint {
-    func offsetBy(dy: CGFloat) -> CGPoint {
-        CGPoint(x: x, y: y + dy)
+    func offsetBy(dx: CGFloat, dy: CGFloat) -> CGPoint {
+        CGPoint(x: x + dx, y: y + dy)
     }
 }

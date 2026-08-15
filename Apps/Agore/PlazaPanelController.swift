@@ -82,7 +82,7 @@ final class PlazaPanelController: NSObject, NSWindowDelegate {
         if let button, let window = button.window {
             let onScreen = window.convertToScreen(button.convert(button.bounds, to: nil))
             origin = CGPoint(x: onScreen.midX - size.width / 2, y: onScreen.minY - size.height - 6)
-        } else if let screen = NSScreen.main {
+        } else if let screen = NSScreen.main ?? NSScreen.screens.first {
             let frame = screen.visibleFrame
             origin = CGPoint(x: frame.midX - size.width / 2, y: frame.maxY - size.height - 6)
         }

@@ -14,8 +14,8 @@ corner of your eye while you work.
 
 ## Status
 
-First release: local presence only, Cursor as the single supported agent provider. The
-plaza is built so remote agents can walk into it later — see [Roadmap](#roadmap).
+Cursor is the only agent provider so far. Each running Agore client is one pixel person.
+A Go plaza server can broadcast those people to every other client over WebSocket.
 
 ## Requirements
 
@@ -39,7 +39,7 @@ bar. Cursor needs to be restarted once for a freshly installed hook to take effe
 ### Using it
 
 - **Left-click** the menu bar icon: show or hide the plaza
-- **Right-click** (or Control-click): menu with **Always on Top**, show/hide, hook status, quit
+- **Right-click** (or Control-click): **Always on Top**, nickname, plaza token, show/hide, hooks, quit
 - **Drag** the strip anywhere; Agore remembers where you put it
 - With **Always on Top** enabled the plaza joins every Space, survives clicks elsewhere, and
   comes back automatically on the next launch
@@ -59,9 +59,11 @@ when the last event arrived.
 | Walking off screen | idle | `sessionEnd`, or two minutes of silence |
 | Asleep by the fountain | nobody home | no active agent at all |
 
-Every Cursor conversation becomes its own pixel person, named after its project folder.
-Subagents get their own smaller character. Up to eight agents each hold a distinct spot
-around the fountain; beyond that the plaza fills a second row.
+One pixel person per Agore client (one Cursor instance on one Mac), not per conversation.
+The name under the person is your nickname (default: this Mac's hostname). Local Cursor
+activity is folded into a single pose: running beats writing, which beats reading, and so
+on. Up to eight people hold distinct spots around the fountain; beyond that the plaza
+fills a second row.
 
 ## How it works
 
@@ -71,9 +73,15 @@ Cursor agent
    ▼
 agore-forward.sh ──POST──▶ 127.0.0.1:<random port>/events   (loopback only)
                                     │
-                          ActivityMapper → PresenceStore → SQLite
+                          ActivityMapper → PresenceStore (fold to 1 person)
                                     │
-                              SpriteKit plaza
+                    ┌───────────────┴───────────────┐
+                    ▼                               ▼
+              SpriteKit plaza              WebSocket hello/presence
+                                                  │
+                                           Go plaza server :8081
+                                                  │
+                                           broadcast to all clients
 ```
 
 - **Hooks are the live path.** A tiny forwarder script posts presence to a loopback HTTP
@@ -92,15 +100,20 @@ Agore is built to know *that* an agent is working, not *what* it is working on. 
 forwarder sends only the conversation id, the hook event name, the tool name, and the last
 path component of the workspace folder. Prompts, file contents, diffs, and full paths never
 leave the agent. The local database (`~/Library/Application Support/Agore/presence.sqlite`)
-stores the same narrow set and prunes itself after seven days. Nothing is sent off the
-machine — the listener binds to loopback only.
+stores the same narrow set and prunes itself after seven days. The local hook listener
+binds to loopback only.
+
+The shared plaza server sees even less: `client_id`, nickname, activity kind, and the
+current project folder name. A shared `AGORE_TOKEN` is required to join. Conversation
+ids never leave the Mac.
 
 ## Project layout
 
 ```
 Apps/Agore/          AppKit shell: status item, floating panel, onboarding window
-Sources/AgoreCore/   presence model, activity mapping, Cursor adapters, SQLite store
+Sources/AgoreCore/   presence model, Cursor adapters, plaza protocol, SQLite store
 Sources/AgorePlaza/  pixel art, SpriteKit scene, character behaviour
+server/              Go WebSocket plaza (in-memory queue + broadcast)
 Resources/hooks/     the Cursor hook forwarder that gets installed for you
 Scripts/             Xcode project and app icon generators
 Tests/               unit tests for the mapping, parsing, store, and hook install
@@ -119,15 +132,65 @@ integer boundary. Changing one without the other will make the art blurry.
 | `make gen-project` | regenerate `Agore.xcodeproj` from `Scripts/gen_pbxproj.py` |
 | `make icons` | regenerate the app icon set from the source art |
 | `make clean` | remove build output |
+| `make plaza` | generate a self-signed cert, then run nginx (HTTPS :8081) + plaza |
+| `make plaza-down` | stop the plaza container |
+| `make plaza-test` | run the Go server tests |
 
 `Agore.xcodeproj` is generated, not hand-edited. Add new source files to
 `Scripts/gen_pbxproj.py` and run `make gen-project`.
 
+## Shared plaza
+
+Each Mac keeps a durable `client_id` in `~/Library/Application Support/Agore/client.json`.
+Reconnecting with the same id replaces the old socket, so restarting Agore does not spawn
+a second pixel person.
+
+### Server
+
+```bash
+cp .env.example .env    # set AGORE_TOKEN
+make plaza              # self-signed cert + nginx HTTPS :8081 + Go plaza
+```
+
+Same shape as CSPM's frontend: nginx terminates TLS on 443 (published as host **8081**),
+then proxies to the Go process over HTTP inside the compose network. WebSocket upgrades
+are forwarded. The cert is generated by `Scripts/gen_tls.sh` (SAN: `agore.bytebar.dev`,
+`localhost`) and is not committed.
+
+Cloudflare Tunnel should point at the nginx port, trusting the self-signed cert:
+
+```yaml
+  - hostname: agore.bytebar.dev
+    service: https://localhost:8081
+    originRequest:
+      noTLSVerify: true
+```
+
+```bash
+cloudflared tunnel route dns c38f0006-5b8c-47a2-9531-c9196a95ee89 agore.bytebar.dev
+# then restart cloudflared so it reloads ~/.cloudflared/config.yml
+```
+
+`AGORE_TOKEN` is required; the process refuses to start without it.
+
+### Client
+
+Defaults to `wss://agore.bytebar.dev/v1/plaza` (Cloudflare's public cert, not the
+self-signed one). Set the shared token:
+
+```bash
+defaults write com.wadeling.agore AgorePlazaToken "the-same-token"
+```
+
+Or set them from the menu bar: **Nickname…** and **Plaza Token…**. If the token is wrong
+the status bar shows `plaza unauthorized` and the client stops retrying until you change it.
+
+If the server is down the local pixel person still walks around; remote people disappear.
+
 ## Roadmap
 
 - More agent providers beyond Cursor
-- Phase two: an opt-in shared plaza, where the agents of everyone running Agore walk into
-  the same square — the point of the name
+- Rooms / per-user accounts (today there is one shared plaza token)
 
 ## License
 

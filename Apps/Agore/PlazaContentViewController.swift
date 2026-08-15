@@ -4,19 +4,36 @@ import AgoreCore
 import AgorePlaza
 
 final class PlazaContentViewController: NSViewController {
-    let plazaView = PlazaView(frame: .zero)
+    let plazaView: PlazaView
     var hint: String?
 
     private let store: PresenceStore
     private let onInstall: () -> Void
+    private let contentSize: CGSize
+    private let rounded: Bool
     private let statusField = NSTextField(labelWithString: "")
     private let actionButton = NSButton(title: "Install Hooks", target: nil, action: nil)
     private var cancellables: Set<AnyCancellable> = []
     private var refreshTimer: Timer?
 
-    init(store: PresenceStore, onInstall: @escaping () -> Void) {
+    init(
+        store: PresenceStore,
+        onInstall: @escaping () -> Void,
+        size: CGSize = AgoreConstants.panelSize,
+        layout: PlazaLayout = .strip,
+        rounded: Bool = true
+    ) {
         self.store = store
         self.onInstall = onInstall
+        self.contentSize = size
+        self.rounded = rounded
+        let plazaFrame = NSRect(
+            x: 0,
+            y: AgoreConstants.statusHeight,
+            width: size.width,
+            height: max(AgoreConstants.plazaHeight, size.height - AgoreConstants.statusHeight)
+        )
+        self.plazaView = PlazaView(frame: plazaFrame, layout: layout)
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -30,18 +47,21 @@ final class PlazaContentViewController: NSViewController {
     }
 
     override func loadView() {
-        let size = AgoreConstants.panelSize
+        let size = contentSize
         let root = NSView(frame: NSRect(origin: .zero, size: size))
         root.wantsLayer = true
-        root.layer?.backgroundColor = .clear
-        root.layer?.cornerRadius = AgoreConstants.cornerRadius
-        root.layer?.masksToBounds = true
+        root.layer?.backgroundColor = NSColor(calibratedRed: 0.24, green: 0.20, blue: 0.16, alpha: rounded ? 0 : 0.92).cgColor
+        if rounded {
+            root.layer?.backgroundColor = .clear
+            root.layer?.cornerRadius = AgoreConstants.cornerRadius
+            root.layer?.masksToBounds = true
+        }
 
         plazaView.frame = NSRect(
             x: 0,
             y: AgoreConstants.statusHeight,
             width: size.width,
-            height: AgoreConstants.plazaHeight
+            height: max(AgoreConstants.plazaHeight, size.height - AgoreConstants.statusHeight)
         )
         plazaView.autoresizingMask = [.width, .height]
         root.addSubview(plazaView)
@@ -98,12 +118,21 @@ final class PlazaContentViewController: NSViewController {
         plazaView.sync(store: store)
         let hooks = store.hooksInstalled ? "hooks on" : "hooks off"
         let time = store.lastEventAt.map(Self.clock.string(from:)) ?? "--:--"
-        let live = store.activeSessions().count
-        let population = live == 0 ? "waiting for cursor" : "\(live) agent\(live == 1 ? "" : "s")"
-        statusField.stringValue = [population, hooks, time, hint]
+        let live = store.plazaMembers().count
+        let population = live == 0 ? "waiting for cursor" : "\(live) person\(live == 1 ? "" : "s")"
+        statusField.stringValue = [population, plazaLabel(store.plazaLink), hooks, time, hint]
             .compactMap { $0 }
             .joined(separator: " · ")
         actionButton.isHidden = store.hooksInstalled
+    }
+
+    private func plazaLabel(_ state: PlazaLinkState) -> String {
+        switch state {
+        case .online: return "plaza on"
+        case .connecting: return "plaza connecting"
+        case .unauthorized: return "plaza unauthorized"
+        case .offline: return "plaza offline"
+        }
     }
 
     @objc private func installTapped() {

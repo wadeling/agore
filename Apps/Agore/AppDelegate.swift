@@ -8,6 +8,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let ingest = HookIngestServer()
     private let installer = HookInstaller()
     private let scanner = CursorTranscriptScanner()
+    private let identity = ClientIdentity.load()
+    private lazy var plaza = PlazaClient(identity: identity)
     private var windowController: PlazaWindowController?
     private var statusItem: StatusItemController?
     private var scanTimer: Timer?
@@ -17,11 +19,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        // Once the plaza is pinned it is meant to be there on login, so the onboarding
-        // window is skipped and the strip comes straight back.
-        NSApp.setActivationPolicy(startsPinned ? .accessory : .regular)
+        // Stay a regular app so the Dock icon remains: clicking it opens the square
+        // window. The menu bar strip is a second, smaller surface.
+        NSApp.setActivationPolicy(.regular)
 
+        store.identity = identity
+        store.onInstanceChange = { [plaza] member in
+            plaza.publish(member)
+        }
+        plaza.onInbound = { [store] inbound in
+            Task { @MainActor in
+                store.applyPlaza(inbound)
+            }
+        }
         store.open()
+        plaza.start()
+
         ingest.onEvent = { [store] event in
             Task { @MainActor in
                 store.apply(event)
@@ -40,10 +53,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         installHooksIfNeeded()
         scanTranscripts()
+        setUpStatusItem()
+        presentPlazaWindow()
         if startsPinned {
-            setUpStatusItem()
-        } else {
-            presentPlazaWindow()
+            statusItem?.showPlaza()
         }
 
         scanTimer = Timer.scheduledTimer(withTimeInterval: 30, repeats: true) { [weak self] _ in
@@ -52,16 +65,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
-        revealPlaza()
+        presentPlazaWindow()
         return true
-    }
-
-    func revealPlaza() {
-        if let statusItem {
-            statusItem.showPlaza()
-        } else {
-            presentPlazaWindow()
-        }
     }
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
@@ -69,10 +74,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationWillTerminate(_ notification: Notification) {
+        plaza.stop()
         ingest.stop()
     }
 
-    private func presentPlazaWindow() {
+    func presentPlazaWindow() {
         if let windowController {
             windowController.present()
             return
@@ -80,27 +86,30 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let controller = PlazaWindowController(
             store: store,
             onInstall: { [weak self] in self?.installHooksIfNeeded() },
-            onClose: { [weak self] in self?.moveToMenuBar() }
+            onClose: {}
         )
         windowController = controller
         controller.present()
     }
 
-    private func moveToMenuBar() {
-        windowController = nil
-        // The policy switch has to wait for the closing window to leave the screen,
-        // otherwise the status item lands in a menu bar that is still being rebuilt.
-        Task { @MainActor in
-            NSApp.setActivationPolicy(.accessory)
-            setUpStatusItem()
-        }
-    }
-
     private func setUpStatusItem() {
         guard statusItem == nil else { return }
-        statusItem = StatusItemController(store: store) { [weak self] in
-            self?.installHooksIfNeeded()
-        }
+        statusItem = StatusItemController(
+            store: store,
+            onInstall: { [weak self] in self?.installHooksIfNeeded() },
+            onNickname: { [weak self] name in self?.applyNickname(name) },
+            onToken: { [weak self] token in self?.applyToken(token) }
+        )
+    }
+
+    private func applyNickname(_ name: String) {
+        store.renameLocal(to: name)
+        plaza.sendNick(ClientIdentity.displayName)
+    }
+
+    private func applyToken(_ token: String) {
+        ClientIdentity.plazaToken = token
+        plaza.reconnect()
     }
 
     private func installHooksIfNeeded() {

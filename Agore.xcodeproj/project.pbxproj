@@ -15,48 +15,46 @@
 		A000000000000000000000D4 /* CursorTranscriptParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000D3 /* CursorTranscriptParser.swift */; };
 		A000000000000000000000D6 /* SQLiteStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000D5 /* SQLiteStore.swift */; };
 		A000000000000000000000D8 /* PresenceStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000D7 /* PresenceStore.swift */; };
-		A000000000000000000000DA /* PixelArt.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000D9 /* PixelArt.swift */; };
-		A000000000000000000000DC /* PlazaActor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000DB /* PlazaActor.swift */; };
-		A000000000000000000000DE /* PlazaScene.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000DD /* PlazaScene.swift */; };
-		A000000000000000000000E0 /* PlazaView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000DF /* PlazaView.swift */; };
-		A000000000000000000000E2 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000E1 /* main.swift */; };
-		A000000000000000000000E4 /* MainMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000E3 /* MainMenu.swift */; };
-		A000000000000000000000E6 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000E5 /* AppDelegate.swift */; };
-		A000000000000000000000E8 /* StatusItemController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000E7 /* StatusItemController.swift */; };
-		A000000000000000000000EA /* PlazaWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000E9 /* PlazaWindowController.swift */; };
-		A000000000000000000000EC /* PlazaPanelController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000EB /* PlazaPanelController.swift */; };
-		A000000000000000000000EE /* PlazaContentViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000ED /* PlazaContentViewController.swift */; };
-		A000000000000000000000F0 /* MenuBarIcon.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000EF /* MenuBarIcon.swift */; };
-		A000000000000000000000F2 /* ActivityMapperTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000F1 /* ActivityMapperTests.swift */; };
-		A000000000000000000000F4 /* CursorTranscriptParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000F3 /* CursorTranscriptParserTests.swift */; };
-		A000000000000000000000F6 /* HookInstallerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000F5 /* HookInstallerTests.swift */; };
-		A000000000000000000000F8 /* HookPayloadTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000F7 /* HookPayloadTests.swift */; };
-		A000000000000000000000FA /* PresenceStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000F9 /* PresenceStoreTests.swift */; };
-		A000000000000000000000FC /* agore-forward.sh in Resources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000FB /* agore-forward.sh */; };
-		A00000000000000000000100 /* sample.jsonl in Resources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000FF /* sample.jsonl */; };
-		A0000000000000000000002F /* SpriteKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A0000000000000000000002B /* SpriteKit.framework */; };
-		A00000000000000000000030 /* SpriteKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A0000000000000000000002B /* SpriteKit.framework */; };
-		A00000000000000000000031 /* Network.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A0000000000000000000002C /* Network.framework */; };
-		A00000000000000000000032 /* Network.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A0000000000000000000002C /* Network.framework */; };
-		A00000000000000000000033 /* libsqlite3.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = A0000000000000000000002D /* libsqlite3.tbd */; };
-		A00000000000000000000034 /* libsqlite3.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = A0000000000000000000002D /* libsqlite3.tbd */; };
-		A00000000000000000000035 /* AppKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A0000000000000000000002E /* AppKit.framework */; };
-		A00000000000000000000036 /* AppKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A0000000000000000000002E /* AppKit.framework */; };
-		A00000000000000000000037 /* libAgoreCore.a in Frameworks */ = {isa = PBXBuildFile; fileRef = A00000000000000000000006 /* libAgoreCore.a */; };
+		A000000000000000000000DA /* Protocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000D9 /* Protocol.swift */; };
+		A000000000000000000000DC /* ClientIdentity.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000DB /* ClientIdentity.swift */; };
+		A000000000000000000000DE /* PlazaClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000DD /* PlazaClient.swift */; };
+		A000000000000000000000E0 /* PixelArt.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000DF /* PixelArt.swift */; };
+		A000000000000000000000E2 /* PlazaLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000E1 /* PlazaLayout.swift */; };
+		A000000000000000000000E4 /* PlazaActor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000E3 /* PlazaActor.swift */; };
+		A000000000000000000000E6 /* PlazaScene.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000E5 /* PlazaScene.swift */; };
+		A000000000000000000000E8 /* PlazaView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000E7 /* PlazaView.swift */; };
+		A000000000000000000000EA /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000E9 /* main.swift */; };
+		A000000000000000000000EC /* MainMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000EB /* MainMenu.swift */; };
+		A000000000000000000000EE /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000ED /* AppDelegate.swift */; };
+		A000000000000000000000F0 /* StatusItemController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000EF /* StatusItemController.swift */; };
+		A000000000000000000000F2 /* PlazaWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000F1 /* PlazaWindowController.swift */; };
+		A000000000000000000000F4 /* PlazaPanelController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000F3 /* PlazaPanelController.swift */; };
+		A000000000000000000000F6 /* PlazaContentViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000F5 /* PlazaContentViewController.swift */; };
+		A000000000000000000000F8 /* MenuBarIcon.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000F7 /* MenuBarIcon.swift */; };
+		A000000000000000000000FA /* ActivityMapperTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000F9 /* ActivityMapperTests.swift */; };
+		A000000000000000000000FC /* CursorTranscriptParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000FB /* CursorTranscriptParserTests.swift */; };
+		A000000000000000000000FE /* HookInstallerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000FD /* HookInstallerTests.swift */; };
+		A00000000000000000000100 /* HookPayloadTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000FF /* HookPayloadTests.swift */; };
+		A00000000000000000000102 /* PresenceStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000101 /* PresenceStoreTests.swift */; };
+		A00000000000000000000104 /* PlazaProtocolTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000103 /* PlazaProtocolTests.swift */; };
+		A00000000000000000000106 /* agore-forward.sh in Resources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000105 /* agore-forward.sh */; };
+		A0000000000000000000010A /* sample.jsonl in Resources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000109 /* sample.jsonl */; };
+		A00000000000000000000030 /* SpriteKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A0000000000000000000002C /* SpriteKit.framework */; };
+		A00000000000000000000031 /* SpriteKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A0000000000000000000002C /* SpriteKit.framework */; };
+		A00000000000000000000032 /* Network.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A0000000000000000000002D /* Network.framework */; };
+		A00000000000000000000033 /* Network.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A0000000000000000000002D /* Network.framework */; };
+		A00000000000000000000034 /* libsqlite3.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = A0000000000000000000002E /* libsqlite3.tbd */; };
+		A00000000000000000000035 /* libsqlite3.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = A0000000000000000000002E /* libsqlite3.tbd */; };
+		A00000000000000000000036 /* AppKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A0000000000000000000002F /* AppKit.framework */; };
+		A00000000000000000000037 /* AppKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A0000000000000000000002F /* AppKit.framework */; };
 		A00000000000000000000038 /* libAgoreCore.a in Frameworks */ = {isa = PBXBuildFile; fileRef = A00000000000000000000006 /* libAgoreCore.a */; };
-		A00000000000000000000039 /* libAgorePlaza.a in Frameworks */ = {isa = PBXBuildFile; fileRef = A00000000000000000000007 /* libAgorePlaza.a */; };
-		A0000000000000000000003A /* libAgoreCore.a in Frameworks */ = {isa = PBXBuildFile; fileRef = A00000000000000000000006 /* libAgoreCore.a */; };
-		A0000000000000000000004B /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000004A /* Assets.xcassets */; };
+		A00000000000000000000039 /* libAgoreCore.a in Frameworks */ = {isa = PBXBuildFile; fileRef = A00000000000000000000006 /* libAgoreCore.a */; };
+		A0000000000000000000003A /* libAgorePlaza.a in Frameworks */ = {isa = PBXBuildFile; fileRef = A00000000000000000000007 /* libAgorePlaza.a */; };
+		A0000000000000000000003B /* libAgoreCore.a in Frameworks */ = {isa = PBXBuildFile; fileRef = A00000000000000000000006 /* libAgoreCore.a */; };
+		A0000000000000000000004C /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000004B /* Assets.xcassets */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
-		A00000000000000000000027 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = A00000000000000000000001 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = A00000000000000000000002;
-			remoteInfo = AgoreCore;
-		};
 		A00000000000000000000028 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = A00000000000000000000001 /* Project object */;
@@ -68,10 +66,17 @@
 			isa = PBXContainerItemProxy;
 			containerPortal = A00000000000000000000001 /* Project object */;
 			proxyType = 1;
+			remoteGlobalIDString = A00000000000000000000002;
+			remoteInfo = AgoreCore;
+		};
+		A0000000000000000000002A /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = A00000000000000000000001 /* Project object */;
+			proxyType = 1;
 			remoteGlobalIDString = A00000000000000000000003;
 			remoteInfo = AgorePlaza;
 		};
-		A0000000000000000000002A /* PBXContainerItemProxy */ = {
+		A0000000000000000000002B /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = A00000000000000000000001 /* Project object */;
 			proxyType = 1;
@@ -85,10 +90,10 @@
 		A00000000000000000000007 /* libAgorePlaza.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libAgorePlaza.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		A00000000000000000000008 /* Agore.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Agore.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A00000000000000000000009 /* AgoreCoreTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AgoreCoreTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		A0000000000000000000002B /* SpriteKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SpriteKit.framework; path = System/Library/Frameworks/SpriteKit.framework; sourceTree = SDKROOT; };
-		A0000000000000000000002C /* Network.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Network.framework; path = System/Library/Frameworks/Network.framework; sourceTree = SDKROOT; };
-		A0000000000000000000002E /* AppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppKit.framework; path = System/Library/Frameworks/AppKit.framework; sourceTree = SDKROOT; };
-		A0000000000000000000002D /* libsqlite3.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libsqlite3.tbd; path = usr/lib/libsqlite3.tbd; sourceTree = SDKROOT; };
+		A0000000000000000000002C /* SpriteKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SpriteKit.framework; path = System/Library/Frameworks/SpriteKit.framework; sourceTree = SDKROOT; };
+		A0000000000000000000002D /* Network.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Network.framework; path = System/Library/Frameworks/Network.framework; sourceTree = SDKROOT; };
+		A0000000000000000000002F /* AppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppKit.framework; path = System/Library/Frameworks/AppKit.framework; sourceTree = SDKROOT; };
+		A0000000000000000000002E /* libsqlite3.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libsqlite3.tbd; path = usr/lib/libsqlite3.tbd; sourceTree = SDKROOT; };
 		A000000000000000000000C9 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
 		A000000000000000000000CB /* ActivityMapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityMapper.swift; sourceTree = "<group>"; };
 		A000000000000000000000CD /* HookPayload.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HookPayload.swift; sourceTree = "<group>"; };
@@ -97,67 +102,72 @@
 		A000000000000000000000D3 /* CursorTranscriptParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CursorTranscriptParser.swift; sourceTree = "<group>"; };
 		A000000000000000000000D5 /* SQLiteStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SQLiteStore.swift; sourceTree = "<group>"; };
 		A000000000000000000000D7 /* PresenceStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PresenceStore.swift; sourceTree = "<group>"; };
-		A000000000000000000000D9 /* PixelArt.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PixelArt.swift; sourceTree = "<group>"; };
-		A000000000000000000000DB /* PlazaActor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlazaActor.swift; sourceTree = "<group>"; };
-		A000000000000000000000DD /* PlazaScene.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlazaScene.swift; sourceTree = "<group>"; };
-		A000000000000000000000DF /* PlazaView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlazaView.swift; sourceTree = "<group>"; };
-		A000000000000000000000E1 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
-		A000000000000000000000E3 /* MainMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainMenu.swift; sourceTree = "<group>"; };
-		A000000000000000000000E5 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
-		A000000000000000000000E7 /* StatusItemController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusItemController.swift; sourceTree = "<group>"; };
-		A000000000000000000000E9 /* PlazaWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlazaWindowController.swift; sourceTree = "<group>"; };
-		A000000000000000000000EB /* PlazaPanelController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlazaPanelController.swift; sourceTree = "<group>"; };
-		A000000000000000000000ED /* PlazaContentViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlazaContentViewController.swift; sourceTree = "<group>"; };
-		A000000000000000000000EF /* MenuBarIcon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarIcon.swift; sourceTree = "<group>"; };
-		A000000000000000000000F1 /* ActivityMapperTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityMapperTests.swift; sourceTree = "<group>"; };
-		A000000000000000000000F3 /* CursorTranscriptParserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CursorTranscriptParserTests.swift; sourceTree = "<group>"; };
-		A000000000000000000000F5 /* HookInstallerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HookInstallerTests.swift; sourceTree = "<group>"; };
-		A000000000000000000000F7 /* HookPayloadTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HookPayloadTests.swift; sourceTree = "<group>"; };
-		A000000000000000000000F9 /* PresenceStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PresenceStoreTests.swift; sourceTree = "<group>"; };
-		A000000000000000000000FD /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		A000000000000000000000FB /* agore-forward.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = "agore-forward.sh"; sourceTree = "<group>"; };
-		A000000000000000000000FF /* sample.jsonl */ = {isa = PBXFileReference; lastKnownFileType = text; path = sample.jsonl; sourceTree = "<group>"; };
-		A0000000000000000000004A /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		A000000000000000000000D9 /* Protocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Protocol.swift; sourceTree = "<group>"; };
+		A000000000000000000000DB /* ClientIdentity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClientIdentity.swift; sourceTree = "<group>"; };
+		A000000000000000000000DD /* PlazaClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlazaClient.swift; sourceTree = "<group>"; };
+		A000000000000000000000DF /* PixelArt.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PixelArt.swift; sourceTree = "<group>"; };
+		A000000000000000000000E1 /* PlazaLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlazaLayout.swift; sourceTree = "<group>"; };
+		A000000000000000000000E3 /* PlazaActor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlazaActor.swift; sourceTree = "<group>"; };
+		A000000000000000000000E5 /* PlazaScene.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlazaScene.swift; sourceTree = "<group>"; };
+		A000000000000000000000E7 /* PlazaView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlazaView.swift; sourceTree = "<group>"; };
+		A000000000000000000000E9 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
+		A000000000000000000000EB /* MainMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainMenu.swift; sourceTree = "<group>"; };
+		A000000000000000000000ED /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		A000000000000000000000EF /* StatusItemController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusItemController.swift; sourceTree = "<group>"; };
+		A000000000000000000000F1 /* PlazaWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlazaWindowController.swift; sourceTree = "<group>"; };
+		A000000000000000000000F3 /* PlazaPanelController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlazaPanelController.swift; sourceTree = "<group>"; };
+		A000000000000000000000F5 /* PlazaContentViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlazaContentViewController.swift; sourceTree = "<group>"; };
+		A000000000000000000000F7 /* MenuBarIcon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarIcon.swift; sourceTree = "<group>"; };
+		A000000000000000000000F9 /* ActivityMapperTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityMapperTests.swift; sourceTree = "<group>"; };
+		A000000000000000000000FB /* CursorTranscriptParserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CursorTranscriptParserTests.swift; sourceTree = "<group>"; };
+		A000000000000000000000FD /* HookInstallerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HookInstallerTests.swift; sourceTree = "<group>"; };
+		A000000000000000000000FF /* HookPayloadTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HookPayloadTests.swift; sourceTree = "<group>"; };
+		A00000000000000000000101 /* PresenceStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PresenceStoreTests.swift; sourceTree = "<group>"; };
+		A00000000000000000000103 /* PlazaProtocolTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlazaProtocolTests.swift; sourceTree = "<group>"; };
+		A00000000000000000000107 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		A00000000000000000000105 /* agore-forward.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = "agore-forward.sh"; sourceTree = "<group>"; };
+		A00000000000000000000109 /* sample.jsonl */ = {isa = PBXFileReference; lastKnownFileType = text; path = sample.jsonl; sourceTree = "<group>"; };
+		A0000000000000000000004B /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		A0000000000000000000001A /* Frameworks */ = {
+		A0000000000000000000001B /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				A00000000000000000000031 /* Network.framework in Frameworks */,
-				A00000000000000000000033 /* libsqlite3.tbd in Frameworks */,
+				A00000000000000000000032 /* Network.framework in Frameworks */,
+				A00000000000000000000034 /* libsqlite3.tbd in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		A0000000000000000000001C /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				A00000000000000000000037 /* libAgoreCore.a in Frameworks */,
-				A0000000000000000000002F /* SpriteKit.framework in Frameworks */,
-				A00000000000000000000035 /* AppKit.framework in Frameworks */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		A0000000000000000000001E /* Frameworks */ = {
+		A0000000000000000000001D /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 				A00000000000000000000038 /* libAgoreCore.a in Frameworks */,
-				A00000000000000000000039 /* libAgorePlaza.a in Frameworks */,
 				A00000000000000000000030 /* SpriteKit.framework in Frameworks */,
-				A00000000000000000000032 /* Network.framework in Frameworks */,
-				A00000000000000000000034 /* libsqlite3.tbd in Frameworks */,
 				A00000000000000000000036 /* AppKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		A00000000000000000000021 /* Frameworks */ = {
+		A0000000000000000000001F /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				A0000000000000000000003A /* libAgoreCore.a in Frameworks */,
+				A00000000000000000000039 /* libAgoreCore.a in Frameworks */,
+				A0000000000000000000003A /* libAgorePlaza.a in Frameworks */,
+				A00000000000000000000031 /* SpriteKit.framework in Frameworks */,
+				A00000000000000000000033 /* Network.framework in Frameworks */,
+				A00000000000000000000035 /* libsqlite3.tbd in Frameworks */,
+				A00000000000000000000037 /* AppKit.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A00000000000000000000022 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A0000000000000000000003B /* libAgoreCore.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -169,14 +179,14 @@
 			children = (
 				A0000000000000000000000B /* Apps */,
 				A0000000000000000000000D /* Sources */,
-				A00000000000000000000012 /* Resources */,
-				A00000000000000000000014 /* Tests */,
-				A00000000000000000000017 /* Frameworks */,
-				A00000000000000000000018 /* Products */,
+				A00000000000000000000013 /* Resources */,
+				A00000000000000000000015 /* Tests */,
+				A00000000000000000000018 /* Frameworks */,
+				A00000000000000000000019 /* Products */,
 			);
 			sourceTree = "<group>";
 		};
-		A00000000000000000000018 /* Products */ = {
+		A00000000000000000000019 /* Products */ = {
 			isa = PBXGroup;
 			children = (
 				A00000000000000000000008 /* Agore.app */,
@@ -187,13 +197,13 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
-		A00000000000000000000017 /* Frameworks */ = {
+		A00000000000000000000018 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
-				A0000000000000000000002E /* AppKit.framework */,
-				A0000000000000000000002C /* Network.framework */,
-				A0000000000000000000002B /* SpriteKit.framework */,
-				A0000000000000000000002D /* libsqlite3.tbd */,
+				A0000000000000000000002F /* AppKit.framework */,
+				A0000000000000000000002D /* Network.framework */,
+				A0000000000000000000002C /* SpriteKit.framework */,
+				A0000000000000000000002E /* libsqlite3.tbd */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -209,16 +219,16 @@
 		A0000000000000000000000C /* Agore */ = {
 			isa = PBXGroup;
 			children = (
-				A000000000000000000000E1 /* main.swift */,
-				A000000000000000000000E3 /* MainMenu.swift */,
-				A000000000000000000000E5 /* AppDelegate.swift */,
-				A000000000000000000000E7 /* StatusItemController.swift */,
-				A000000000000000000000E9 /* PlazaWindowController.swift */,
-				A000000000000000000000EB /* PlazaPanelController.swift */,
-				A000000000000000000000ED /* PlazaContentViewController.swift */,
-				A000000000000000000000EF /* MenuBarIcon.swift */,
-				A000000000000000000000FD /* Info.plist */,
-				A0000000000000000000004A /* Assets.xcassets */,
+				A000000000000000000000E9 /* main.swift */,
+				A000000000000000000000EB /* MainMenu.swift */,
+				A000000000000000000000ED /* AppDelegate.swift */,
+				A000000000000000000000EF /* StatusItemController.swift */,
+				A000000000000000000000F1 /* PlazaWindowController.swift */,
+				A000000000000000000000F3 /* PlazaPanelController.swift */,
+				A000000000000000000000F5 /* PlazaContentViewController.swift */,
+				A000000000000000000000F7 /* MenuBarIcon.swift */,
+				A00000000000000000000107 /* Info.plist */,
+				A0000000000000000000004B /* Assets.xcassets */,
 			);
 			path = Agore;
 			sourceTree = "<group>";
@@ -227,7 +237,7 @@
 			isa = PBXGroup;
 			children = (
 				A0000000000000000000000E /* AgoreCore */,
-				A00000000000000000000011 /* AgorePlaza */,
+				A00000000000000000000012 /* AgorePlaza */,
 			);
 			path = Sources;
 			sourceTree = "<group>";
@@ -239,6 +249,7 @@
 				A000000000000000000000CB /* ActivityMapper.swift */,
 				A0000000000000000000000F /* Cursor */,
 				A00000000000000000000010 /* Store */,
+				A00000000000000000000011 /* Plaza */,
 			);
 			path = AgoreCore;
 			sourceTree = "<group>";
@@ -263,58 +274,70 @@
 			path = Store;
 			sourceTree = "<group>";
 		};
-		A00000000000000000000011 /* AgorePlaza */ = {
+		A00000000000000000000011 /* Plaza */ = {
 			isa = PBXGroup;
 			children = (
-				A000000000000000000000D9 /* PixelArt.swift */,
-				A000000000000000000000DB /* PlazaActor.swift */,
-				A000000000000000000000DD /* PlazaScene.swift */,
-				A000000000000000000000DF /* PlazaView.swift */,
+				A000000000000000000000D9 /* Protocol.swift */,
+				A000000000000000000000DB /* ClientIdentity.swift */,
+				A000000000000000000000DD /* PlazaClient.swift */,
+			);
+			path = Plaza;
+			sourceTree = "<group>";
+		};
+		A00000000000000000000012 /* AgorePlaza */ = {
+			isa = PBXGroup;
+			children = (
+				A000000000000000000000DF /* PixelArt.swift */,
+				A000000000000000000000E1 /* PlazaLayout.swift */,
+				A000000000000000000000E3 /* PlazaActor.swift */,
+				A000000000000000000000E5 /* PlazaScene.swift */,
+				A000000000000000000000E7 /* PlazaView.swift */,
 			);
 			path = AgorePlaza;
 			sourceTree = "<group>";
 		};
-		A00000000000000000000012 /* Resources */ = {
+		A00000000000000000000013 /* Resources */ = {
 			isa = PBXGroup;
 			children = (
-				A00000000000000000000013 /* hooks */,
+				A00000000000000000000014 /* hooks */,
 			);
 			path = Resources;
 			sourceTree = "<group>";
 		};
-		A00000000000000000000013 /* hooks */ = {
+		A00000000000000000000014 /* hooks */ = {
 			isa = PBXGroup;
 			children = (
-				A000000000000000000000FB /* agore-forward.sh */,
+				A00000000000000000000105 /* agore-forward.sh */,
 			);
 			path = hooks;
 			sourceTree = "<group>";
 		};
-		A00000000000000000000014 /* Tests */ = {
+		A00000000000000000000015 /* Tests */ = {
 			isa = PBXGroup;
 			children = (
-				A00000000000000000000015 /* AgoreCoreTests */,
+				A00000000000000000000016 /* AgoreCoreTests */,
 			);
 			path = Tests;
 			sourceTree = "<group>";
 		};
-		A00000000000000000000015 /* AgoreCoreTests */ = {
+		A00000000000000000000016 /* AgoreCoreTests */ = {
 			isa = PBXGroup;
 			children = (
-				A000000000000000000000F1 /* ActivityMapperTests.swift */,
-				A000000000000000000000F3 /* CursorTranscriptParserTests.swift */,
-				A000000000000000000000F5 /* HookInstallerTests.swift */,
-				A000000000000000000000F7 /* HookPayloadTests.swift */,
-				A000000000000000000000F9 /* PresenceStoreTests.swift */,
-				A00000000000000000000016 /* Fixtures */,
+				A000000000000000000000F9 /* ActivityMapperTests.swift */,
+				A000000000000000000000FB /* CursorTranscriptParserTests.swift */,
+				A000000000000000000000FD /* HookInstallerTests.swift */,
+				A000000000000000000000FF /* HookPayloadTests.swift */,
+				A00000000000000000000101 /* PresenceStoreTests.swift */,
+				A00000000000000000000103 /* PlazaProtocolTests.swift */,
+				A00000000000000000000017 /* Fixtures */,
 			);
 			path = AgoreCoreTests;
 			sourceTree = "<group>";
 		};
-		A00000000000000000000016 /* Fixtures */ = {
+		A00000000000000000000017 /* Fixtures */ = {
 			isa = PBXGroup;
 			children = (
-				A000000000000000000000FF /* sample.jsonl */,
+				A00000000000000000000109 /* sample.jsonl */,
 			);
 			path = Fixtures;
 			sourceTree = "<group>";
@@ -324,10 +347,10 @@
 /* Begin PBXNativeTarget section */
 		A00000000000000000000002 /* AgoreCore */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = A00000000000000000000046 /* Build configuration list for PBXNativeTarget "AgoreCore" */;
+			buildConfigurationList = A00000000000000000000047 /* Build configuration list for PBXNativeTarget "AgoreCore" */;
 			buildPhases = (
-				A00000000000000000000019 /* Sources */,
-				A0000000000000000000001A /* Frameworks */,
+				A0000000000000000000001A /* Sources */,
+				A0000000000000000000001B /* Frameworks */,
 			);
 			buildRules = (
 			);
@@ -340,15 +363,15 @@
 		};
 		A00000000000000000000003 /* AgorePlaza */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = A00000000000000000000047 /* Build configuration list for PBXNativeTarget "AgorePlaza" */;
+			buildConfigurationList = A00000000000000000000048 /* Build configuration list for PBXNativeTarget "AgorePlaza" */;
 			buildPhases = (
-				A0000000000000000000001B /* Sources */,
-				A0000000000000000000001C /* Frameworks */,
+				A0000000000000000000001C /* Sources */,
+				A0000000000000000000001D /* Frameworks */,
 			);
 			buildRules = (
 			);
 			dependencies = (
-				A00000000000000000000023 /* PBXTargetDependency */,
+				A00000000000000000000024 /* PBXTargetDependency */,
 			);
 			name = AgorePlaza;
 			productName = AgorePlaza;
@@ -357,17 +380,17 @@
 		};
 		A00000000000000000000004 /* Agore */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = A00000000000000000000048 /* Build configuration list for PBXNativeTarget "Agore" */;
+			buildConfigurationList = A00000000000000000000049 /* Build configuration list for PBXNativeTarget "Agore" */;
 			buildPhases = (
-				A0000000000000000000001D /* Sources */,
-				A0000000000000000000001E /* Frameworks */,
-				A0000000000000000000001F /* Resources */,
+				A0000000000000000000001E /* Sources */,
+				A0000000000000000000001F /* Frameworks */,
+				A00000000000000000000020 /* Resources */,
 			);
 			buildRules = (
 			);
 			dependencies = (
-				A00000000000000000000024 /* PBXTargetDependency */,
 				A00000000000000000000025 /* PBXTargetDependency */,
+				A00000000000000000000026 /* PBXTargetDependency */,
 			);
 			name = Agore;
 			productName = Agore;
@@ -376,16 +399,16 @@
 		};
 		A00000000000000000000005 /* AgoreCoreTests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = A00000000000000000000049 /* Build configuration list for PBXNativeTarget "AgoreCoreTests" */;
+			buildConfigurationList = A0000000000000000000004A /* Build configuration list for PBXNativeTarget "AgoreCoreTests" */;
 			buildPhases = (
-				A00000000000000000000020 /* Sources */,
-				A00000000000000000000021 /* Frameworks */,
-				A00000000000000000000022 /* Resources */,
+				A00000000000000000000021 /* Sources */,
+				A00000000000000000000022 /* Frameworks */,
+				A00000000000000000000023 /* Resources */,
 			);
 			buildRules = (
 			);
 			dependencies = (
-				A00000000000000000000026 /* PBXTargetDependency */,
+				A00000000000000000000027 /* PBXTargetDependency */,
 			);
 			name = AgoreCoreTests;
 			productName = AgoreCoreTests;
@@ -402,7 +425,7 @@
 				LastSwiftUpdateCheck = 2610;
 				LastUpgradeCheck = 2610;
 			};
-			buildConfigurationList = A00000000000000000000045 /* Build configuration list for PBXProject "Agore" */;
+			buildConfigurationList = A00000000000000000000046 /* Build configuration list for PBXProject "Agore" */;
 			compatibilityVersion = "Xcode 14.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
@@ -411,7 +434,7 @@
 				Base,
 			);
 			mainGroup = A0000000000000000000000A;
-			productRefGroup = A00000000000000000000018 /* Products */;
+			productRefGroup = A00000000000000000000019 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
@@ -424,27 +447,27 @@
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
-		A0000000000000000000001F /* Resources */ = {
+		A00000000000000000000020 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				A000000000000000000000FC /* agore-forward.sh in Resources */,
-				A0000000000000000000004B /* Assets.xcassets in Resources */,
+				A00000000000000000000106 /* agore-forward.sh in Resources */,
+				A0000000000000000000004C /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		A00000000000000000000022 /* Resources */ = {
+		A00000000000000000000023 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				A00000000000000000000100 /* sample.jsonl in Resources */,
+				A0000000000000000000010A /* sample.jsonl in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
-		A00000000000000000000019 /* Sources */ = {
+		A0000000000000000000001A /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -456,55 +479,55 @@
 				A000000000000000000000D4 /* CursorTranscriptParser.swift in Sources */,
 				A000000000000000000000D6 /* SQLiteStore.swift in Sources */,
 				A000000000000000000000D8 /* PresenceStore.swift in Sources */,
+				A000000000000000000000DA /* Protocol.swift in Sources */,
+				A000000000000000000000DC /* ClientIdentity.swift in Sources */,
+				A000000000000000000000DE /* PlazaClient.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		A0000000000000000000001B /* Sources */ = {
+		A0000000000000000000001C /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				A000000000000000000000DA /* PixelArt.swift in Sources */,
-				A000000000000000000000DC /* PlazaActor.swift in Sources */,
-				A000000000000000000000DE /* PlazaScene.swift in Sources */,
-				A000000000000000000000E0 /* PlazaView.swift in Sources */,
+				A000000000000000000000E0 /* PixelArt.swift in Sources */,
+				A000000000000000000000E2 /* PlazaLayout.swift in Sources */,
+				A000000000000000000000E4 /* PlazaActor.swift in Sources */,
+				A000000000000000000000E6 /* PlazaScene.swift in Sources */,
+				A000000000000000000000E8 /* PlazaView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		A0000000000000000000001D /* Sources */ = {
+		A0000000000000000000001E /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				A000000000000000000000E2 /* main.swift in Sources */,
-				A000000000000000000000E4 /* MainMenu.swift in Sources */,
-				A000000000000000000000E6 /* AppDelegate.swift in Sources */,
-				A000000000000000000000E8 /* StatusItemController.swift in Sources */,
-				A000000000000000000000EA /* PlazaWindowController.swift in Sources */,
-				A000000000000000000000EC /* PlazaPanelController.swift in Sources */,
-				A000000000000000000000EE /* PlazaContentViewController.swift in Sources */,
-				A000000000000000000000F0 /* MenuBarIcon.swift in Sources */,
+				A000000000000000000000EA /* main.swift in Sources */,
+				A000000000000000000000EC /* MainMenu.swift in Sources */,
+				A000000000000000000000EE /* AppDelegate.swift in Sources */,
+				A000000000000000000000F0 /* StatusItemController.swift in Sources */,
+				A000000000000000000000F2 /* PlazaWindowController.swift in Sources */,
+				A000000000000000000000F4 /* PlazaPanelController.swift in Sources */,
+				A000000000000000000000F6 /* PlazaContentViewController.swift in Sources */,
+				A000000000000000000000F8 /* MenuBarIcon.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		A00000000000000000000020 /* Sources */ = {
+		A00000000000000000000021 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				A000000000000000000000F2 /* ActivityMapperTests.swift in Sources */,
-				A000000000000000000000F4 /* CursorTranscriptParserTests.swift in Sources */,
-				A000000000000000000000F6 /* HookInstallerTests.swift in Sources */,
-				A000000000000000000000F8 /* HookPayloadTests.swift in Sources */,
-				A000000000000000000000FA /* PresenceStoreTests.swift in Sources */,
+				A000000000000000000000FA /* ActivityMapperTests.swift in Sources */,
+				A000000000000000000000FC /* CursorTranscriptParserTests.swift in Sources */,
+				A000000000000000000000FE /* HookInstallerTests.swift in Sources */,
+				A00000000000000000000100 /* HookPayloadTests.swift in Sources */,
+				A00000000000000000000102 /* PresenceStoreTests.swift in Sources */,
+				A00000000000000000000104 /* PlazaProtocolTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
-		A00000000000000000000023 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = A00000000000000000000002 /* AgoreCore */;
-			targetProxy = A00000000000000000000027 /* PBXContainerItemProxy */;
-		};
 		A00000000000000000000024 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = A00000000000000000000002 /* AgoreCore */;
@@ -512,18 +535,23 @@
 		};
 		A00000000000000000000025 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = A00000000000000000000003 /* AgorePlaza */;
+			target = A00000000000000000000002 /* AgoreCore */;
 			targetProxy = A00000000000000000000029 /* PBXContainerItemProxy */;
 		};
 		A00000000000000000000026 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = A00000000000000000000002 /* AgoreCore */;
+			target = A00000000000000000000003 /* AgorePlaza */;
 			targetProxy = A0000000000000000000002A /* PBXContainerItemProxy */;
+		};
+		A00000000000000000000027 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = A00000000000000000000002 /* AgoreCore */;
+			targetProxy = A0000000000000000000002B /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
-		A0000000000000000000003B /* Debug */ = {
+		A0000000000000000000003C /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 
@@ -547,7 +575,7 @@
 			};
 			name = Debug;
 		};
-		A0000000000000000000003C /* Release */ = {
+		A0000000000000000000003D /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 
@@ -568,7 +596,7 @@
 			};
 			name = Release;
 		};
-		A0000000000000000000003D /* Debug */ = {
+		A0000000000000000000003E /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGNING_ALLOWED = NO;
@@ -583,7 +611,7 @@
 			};
 			name = Debug;
 		};
-		A0000000000000000000003E /* Release */ = {
+		A0000000000000000000003F /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGNING_ALLOWED = NO;
@@ -598,7 +626,7 @@
 			};
 			name = Release;
 		};
-		A0000000000000000000003F /* Debug */ = {
+		A00000000000000000000040 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGNING_ALLOWED = NO;
@@ -613,7 +641,7 @@
 			};
 			name = Debug;
 		};
-		A00000000000000000000040 /* Release */ = {
+		A00000000000000000000041 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGNING_ALLOWED = NO;
@@ -628,7 +656,7 @@
 			};
 			name = Release;
 		};
-		A00000000000000000000041 /* Debug */ = {
+		A00000000000000000000042 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
@@ -647,7 +675,7 @@
 			};
 			name = Debug;
 		};
-		A00000000000000000000042 /* Release */ = {
+		A00000000000000000000043 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
@@ -666,7 +694,7 @@
 			};
 			name = Release;
 		};
-		A00000000000000000000043 /* Debug */ = {
+		A00000000000000000000044 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGNING_ALLOWED = NO;
@@ -680,7 +708,7 @@
 			};
 			name = Debug;
 		};
-		A00000000000000000000044 /* Release */ = {
+		A00000000000000000000045 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGNING_ALLOWED = NO;
@@ -697,47 +725,47 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		A00000000000000000000045 /* Build configuration list for PBXProject "Agore" */ = {
+		A00000000000000000000046 /* Build configuration list for PBXProject "Agore" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				A0000000000000000000003B /* Debug */,
-				A0000000000000000000003C /* Release */,
+				A0000000000000000000003C /* Debug */,
+				A0000000000000000000003D /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		A00000000000000000000046 /* Build configuration list for PBXNativeTarget "AgoreCore" */ = {
+		A00000000000000000000047 /* Build configuration list for PBXNativeTarget "AgoreCore" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				A0000000000000000000003D /* Debug */,
-				A0000000000000000000003E /* Release */,
+				A0000000000000000000003E /* Debug */,
+				A0000000000000000000003F /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		A00000000000000000000047 /* Build configuration list for PBXNativeTarget "AgorePlaza" */ = {
+		A00000000000000000000048 /* Build configuration list for PBXNativeTarget "AgorePlaza" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				A0000000000000000000003F /* Debug */,
-				A00000000000000000000040 /* Release */,
+				A00000000000000000000040 /* Debug */,
+				A00000000000000000000041 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		A00000000000000000000048 /* Build configuration list for PBXNativeTarget "Agore" */ = {
+		A00000000000000000000049 /* Build configuration list for PBXNativeTarget "Agore" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				A00000000000000000000041 /* Debug */,
-				A00000000000000000000042 /* Release */,
+				A00000000000000000000042 /* Debug */,
+				A00000000000000000000043 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		A00000000000000000000049 /* Build configuration list for PBXNativeTarget "AgoreCoreTests" */ = {
+		A0000000000000000000004A /* Build configuration list for PBXNativeTarget "AgoreCoreTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				A00000000000000000000043 /* Debug */,
-				A00000000000000000000044 /* Release */,
+				A00000000000000000000044 /* Debug */,
+				A00000000000000000000045 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

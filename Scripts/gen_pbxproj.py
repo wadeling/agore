@@ -26,6 +26,7 @@ ids = {name: nid(i + 1) for i, name in enumerate([
     "GROUP_CORE",
     "GROUP_CORE_CURSOR",
     "GROUP_CORE_STORE",
+    "GROUP_CORE_PLAZA",
     "GROUP_PLAZA",
     "GROUP_RESOURCES",
     "GROUP_HOOKS",
@@ -96,9 +97,13 @@ core_files = [
     "Sources/AgoreCore/Cursor/CursorTranscriptParser.swift",
     "Sources/AgoreCore/Store/SQLiteStore.swift",
     "Sources/AgoreCore/Store/PresenceStore.swift",
+    "Sources/AgoreCore/Plaza/Protocol.swift",
+    "Sources/AgoreCore/Plaza/ClientIdentity.swift",
+    "Sources/AgoreCore/Plaza/PlazaClient.swift",
 ]
 plaza_files = [
     "Sources/AgorePlaza/PixelArt.swift",
+    "Sources/AgorePlaza/PlazaLayout.swift",
     "Sources/AgorePlaza/PlazaActor.swift",
     "Sources/AgorePlaza/PlazaScene.swift",
     "Sources/AgorePlaza/PlazaView.swift",
@@ -119,6 +124,7 @@ test_files = [
     "Tests/AgoreCoreTests/HookInstallerTests.swift",
     "Tests/AgoreCoreTests/HookPayloadTests.swift",
     "Tests/AgoreCoreTests/PresenceStoreTests.swift",
+    "Tests/AgoreCoreTests/PlazaProtocolTests.swift",
 ]
 resource_files = [
     "Resources/hooks/agore-forward.sh",
@@ -335,6 +341,7 @@ o(f"\t\t\t\t{file_ids['Sources/AgoreCore/Models.swift']} /* Models.swift */,")
 o(f"\t\t\t\t{file_ids['Sources/AgoreCore/ActivityMapper.swift']} /* ActivityMapper.swift */,")
 o(f"\t\t\t\t{ids['GROUP_CORE_CURSOR']} /* Cursor */,")
 o(f"\t\t\t\t{ids['GROUP_CORE_STORE']} /* Store */,")
+o(f"\t\t\t\t{ids['GROUP_CORE_PLAZA']} /* Plaza */,")
 o("\t\t\t);")
 o("\t\t\tpath = AgoreCore;")
 o("\t\t\tsourceTree = \"<group>\";")
@@ -355,6 +362,15 @@ for path in [p for p in core_files if "/Store/" in p]:
     o(f"\t\t\t\t{file_ids[path]} /* {Path(path).name} */,")
 o("\t\t\t);")
 o("\t\t\tpath = Store;")
+o("\t\t\tsourceTree = \"<group>\";")
+o("\t\t};")
+o(f"\t\t{ids['GROUP_CORE_PLAZA']} /* Plaza */ = {{")
+o("\t\t\tisa = PBXGroup;")
+o("\t\t\tchildren = (")
+for path in [p for p in core_files if "/Plaza/" in p]:
+    o(f"\t\t\t\t{file_ids[path]} /* {Path(path).name} */,")
+o("\t\t\t);")
+o("\t\t\tpath = Plaza;")
 o("\t\t\tsourceTree = \"<group>\";")
 o("\t\t};")
 o(f"\t\t{ids['GROUP_PLAZA']} /* AgorePlaza */ = {{")

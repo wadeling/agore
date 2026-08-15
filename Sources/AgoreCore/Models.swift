@@ -13,6 +13,51 @@ public enum PresenceSource: String, Codable, Sendable {
     case hook
     case transcript
     case demo
+    case plaza
+}
+
+public enum PlazaLinkState: String, Sendable {
+    case offline
+    case connecting
+    case online
+    case unauthorized
+}
+
+public struct PlazaMember: Equatable, Identifiable, Sendable {
+    public var id: String
+    public var displayName: String
+    public var kind: ActivityKind
+    public var project: String
+    public var lastSeen: Date
+    public var isLocal: Bool
+
+    public init(
+        id: String,
+        displayName: String,
+        kind: ActivityKind,
+        project: String = "",
+        lastSeen: Date = Date(),
+        isLocal: Bool = false
+    ) {
+        self.id = id
+        self.displayName = displayName
+        self.kind = kind
+        self.project = project
+        self.lastSeen = lastSeen
+        self.isLocal = isLocal
+    }
+
+    public func asSession() -> AgentSession {
+        AgentSession(
+            id: id,
+            provider: isLocal ? AgoreConstants.providerCursor : "plaza",
+            projectSlug: project,
+            displayName: displayName,
+            kind: kind,
+            lastSeen: lastSeen,
+            source: isLocal ? .hook : .plaza
+        )
+    }
 }
 
 public struct PresenceEvent: Equatable, Sendable {
@@ -98,6 +143,10 @@ public enum AgorePaths {
         applicationSupport.appendingPathComponent("presence.sqlite")
     }
 
+    public static var clientIdentityFile: URL {
+        applicationSupport.appendingPathComponent("client.json")
+    }
+
     public static var cursorHooksDirectory: URL {
         FileManager.default.homeDirectoryForCurrentUser
             .appendingPathComponent(".cursor", isDirectory: true)
@@ -128,12 +177,21 @@ public enum AgorePaths {
 public enum AgoreConstants {
     /// A slim strip that can sit above other windows all day without covering work.
     public static let panelSize = CGSize(width: 720, height: 102)
+    /// Dock / first-launch window. Plaza area is 720×720 (3× the 240 courtyard).
+    public static let windowSize = CGSize(width: 720, height: 738)
     public static let plazaHeight: CGFloat = 84
     public static let statusHeight: CGFloat = 18
     public static let cornerRadius: CGFloat = 12
     /// The plaza floor is translucent so the desktop shows through; the actors stay opaque.
     public static let groundOpacity: CGFloat = 0.7
     public static let alwaysOnTopKey = "AgoreAlwaysOnTop"
+    public static let plazaURLKey = "AgorePlazaURL"
+    public static let plazaTokenKey = "AgorePlazaToken"
+    public static let displayNameKey = "AgoreDisplayName"
+    public static let defaultPlazaURL = "wss://agore.bytebar.dev/v1/plaza"
+    public static let plazaProtocolVersion = 1
+    public static let plazaHeartbeat: TimeInterval = 25
+    public static let plazaDebounce: TimeInterval = 0.4
     /// Silence for this long counts as the agent having gone to sleep.
     public static let idleTimeout: TimeInterval = 2 * 60
     /// How long a departing agent stays on stage, long enough to walk off screen.

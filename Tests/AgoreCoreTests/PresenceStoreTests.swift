@@ -71,4 +71,56 @@ final class PresenceStoreTests: XCTestCase {
         XCTAssertTrue(store.activeSessions().isEmpty)
         XCTAssertTrue(store.isEmpty)
     }
+
+    func testInstancePresenceFoldsConversations() {
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("agore-store-\(UUID().uuidString).sqlite")
+        let store = PresenceStore(idleTimeout: 60, databaseURL: url)
+        store.identity = ClientIdentity(clientId: "me", sessionId: "s")
+        store.open()
+        store.apply(
+            PresenceEvent(
+                conversationId: "c1",
+                kind: .reading,
+                toolName: "Read",
+                projectSlug: "alpha",
+                source: .hook
+            )
+        )
+        store.apply(
+            PresenceEvent(
+                conversationId: "c2",
+                kind: .writing,
+                toolName: "Write",
+                projectSlug: "beta",
+                source: .hook
+            )
+        )
+        XCTAssertEqual(store.activeSessions().count, 2)
+        XCTAssertEqual(store.plazaMembers().count, 1)
+        XCTAssertEqual(store.instancePresence().kind, .writing)
+        XCTAssertEqual(store.instancePresence().id, "me")
+    }
+
+    func testRemoteRosterDoesNotDuplicateLocal() {
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("agore-store-\(UUID().uuidString).sqlite")
+        let store = PresenceStore(idleTimeout: 60, databaseURL: url)
+        store.identity = ClientIdentity(clientId: "me", sessionId: "s")
+        store.open()
+        store.apply(
+            PresenceEvent(
+                conversationId: "c1",
+                kind: .running,
+                toolName: "Shell",
+                projectSlug: "agore",
+                source: .hook
+            )
+        )
+        store.applyPlaza(.snapshot([
+            PlazaMember(id: "me", displayName: "self", kind: .thinking, isLocal: true),
+            PlazaMember(id: "other", displayName: "stoa", kind: .reading),
+        ]))
+        let ids = store.plazaMembers().map(\.id).sorted()
+        XCTAssertEqual(ids, ["me", "other"])
+        XCTAssertEqual(store.plazaMembers().first { $0.id == "me" }?.kind, .running)
+    }
 }

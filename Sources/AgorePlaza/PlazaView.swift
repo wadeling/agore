@@ -3,16 +3,22 @@ import SpriteKit
 import AgoreCore
 
 public final class PlazaView: SKView {
-    public let plazaScene = PlazaScene()
+    public let plazaScene: PlazaScene
 
-    public override init(frame frameRect: NSRect) {
+    public init(frame frameRect: NSRect, layout: PlazaLayout) {
+        plazaScene = PlazaScene(layout: layout)
         super.init(frame: frameRect)
         ignoresSiblingOrder = true
-        allowsTransparency = true
+        allowsTransparency = layout == .strip
         showsFPS = false
         showsNodeCount = false
         preferredFramesPerSecond = 30
-        presentScene(plazaScene)
+        // A zero-size first layout makes SpriteKit compute an empty visible rect;
+        // the big ground sprite still intersects it, but the 16×20 actors get culled.
+        shouldCullNonVisibleNodes = false
+        if frameRect.width > 1, frameRect.height > 1 {
+            presentScene(plazaScene)
+        }
     }
 
     @available(*, unavailable)
@@ -20,7 +26,23 @@ public final class PlazaView: SKView {
         fatalError("init(coder:) has not been implemented")
     }
 
+    public override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        attachSceneIfNeeded()
+    }
+
+    public override func setFrameSize(_ newSize: NSSize) {
+        super.setFrameSize(newSize)
+        attachSceneIfNeeded()
+    }
+
     public func sync(store: PresenceStore) {
-        plazaScene.sync(sessions: store.activeSessions())
+        attachSceneIfNeeded()
+        plazaScene.sync(sessions: store.plazaMembers().map { $0.asSession() })
+    }
+
+    private func attachSceneIfNeeded() {
+        guard scene == nil, bounds.width > 1, bounds.height > 1 else { return }
+        presentScene(plazaScene)
     }
 }
