@@ -104,6 +104,7 @@ public final class PresenceStore: ObservableObject {
     public func applyPlaza(_ inbound: PlazaInbound) {
         switch inbound {
         case .link(let state):
+            guard state != plazaLink else { return }
             plazaLink = state
             if state != .online {
                 remoteRoster.removeAll()

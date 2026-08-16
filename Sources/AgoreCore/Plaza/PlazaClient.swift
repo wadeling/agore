@@ -17,6 +17,13 @@ public final class PlazaClient: @unchecked Sendable {
     private var lastURL: URL?
     private var lastToken: String?
     private var rejected = false
+    /// Bumped by every tear-down. A socket has several callbacks in flight at once — the
+    /// receive, the hello send, the heartbeat ping — and an unreachable server fails all
+    /// of them. Stamping each with the generation it belongs to means one dead socket
+    /// produces one reconnect instead of one per callback, which is what turned a missing
+    /// plaza server into tens of thousands of live URLSessions.
+    private var generation = 0
+    private var reconnectScheduled = false
 
     public init(identity: ClientIdentity) {
         self.identity = identity
@@ -59,7 +66,8 @@ public final class PlazaClient: @unchecked Sendable {
             self.pending = member
             self.debounceWork?.cancel()
             let work = DispatchWorkItem { [weak self] in
-                self?.flush()
+                guard let self else { return }
+                self.flush(generation: self.generation)
             }
             self.debounceWork = work
             self.queue.asyncAfter(deadline: .now() + AgoreConstants.plazaDebounce, execute: work)
@@ -68,7 +76,7 @@ public final class PlazaClient: @unchecked Sendable {
 
     public func sendNick(_ name: String) {
         queue.async {
-            self.send(PlazaEnvelope.nick(name))
+            self.send(PlazaEnvelope.nick(name), generation: self.generation)
         }
     }
 
@@ -85,32 +93,34 @@ public final class PlazaClient: @unchecked Sendable {
         self.session = session
         let task = session.webSocketTask(with: ClientIdentity.plazaURL)
         self.task = task
+        let generation = self.generation
         task.resume()
         send(PlazaEnvelope.hello(
             identity: identity,
             displayName: ClientIdentity.displayName,
             token: ClientIdentity.plazaToken
-        ))
-        receive()
-        startHeartbeat()
+        ), generation: generation)
+        receive(on: task, generation: generation)
+        startHeartbeat(generation: generation)
     }
 
-    private func receive() {
-        task?.receive { [weak self] result in
+    private func receive(on task: URLSessionWebSocketTask, generation: Int) {
+        task.receive { [weak self] result in
             guard let self else { return }
             self.queue.async {
+                guard generation == self.generation else { return }
                 switch result {
                 case .failure:
-                    self.handleDrop()
+                    self.handleDrop(generation: generation)
                 case .success(let message):
-                    self.handle(message)
-                    self.receive()
+                    self.handle(message, generation: generation)
+                    self.receive(on: task, generation: generation)
                 }
             }
         }
     }
 
-    private func handle(_ message: URLSessionWebSocketTask.Message) {
+    private func handle(_ message: URLSessionWebSocketTask.Message, generation: Int) {
         let data: Data
         switch message {
         case .data(let value):
@@ -127,7 +137,7 @@ public final class PlazaClient: @unchecked Sendable {
             emit(.link(.online))
             let members = (envelope.snapshot ?? []).map { $0.asMember(localId: identity.clientId) }
             emit(.snapshot(members))
-            flush(immediate: true)
+            flush(generation: generation)
         case "presence":
             if let dto = snapshotItem(from: envelope) {
                 emit(.presence(dto.asMember(localId: identity.clientId)))
@@ -143,7 +153,7 @@ public final class PlazaClient: @unchecked Sendable {
                 tearDown()
                 return
             }
-            handleDrop()
+            handleDrop(generation: generation)
         case "pong":
             break
         default:
@@ -165,50 +175,58 @@ public final class PlazaClient: @unchecked Sendable {
         )
     }
 
-    private func flush(immediate: Bool = false) {
+    private func flush(generation: Int) {
         guard let member = pending else { return }
-        if !immediate, debounceWork?.isCancelled == false {
-            // still waiting
-        }
-        send(PlazaEnvelope.presence(member))
+        send(PlazaEnvelope.presence(member), generation: generation)
     }
 
-    private func send(_ envelope: PlazaEnvelope) {
-        guard let task, let data = try? envelope.encoded() else { return }
+    private func send(_ envelope: PlazaEnvelope, generation: Int) {
+        guard generation == self.generation, let task else { return }
+        guard let data = try? envelope.encoded() else { return }
         guard let text = String(data: data, encoding: .utf8) else { return }
         task.send(.string(text)) { [weak self] error in
-            if error != nil {
-                self?.queue.async { self?.handleDrop() }
-            }
+            guard error != nil, let self else { return }
+            self.queue.async { self.handleDrop(generation: generation) }
         }
     }
 
-    private func startHeartbeat() {
+    private func startHeartbeat(generation: Int) {
         heartbeat?.cancel()
         let timer = DispatchSource.makeTimerSource(queue: queue)
         timer.schedule(deadline: .now() + AgoreConstants.plazaHeartbeat, repeating: AgoreConstants.plazaHeartbeat)
         timer.setEventHandler { [weak self] in
-            self?.send(PlazaEnvelope.ping())
+            self?.send(PlazaEnvelope.ping(), generation: generation)
         }
         timer.resume()
         heartbeat = timer
     }
 
-    private func handleDrop() {
-        guard running else { return }
-        if rejected { return }
+    private func handleDrop(generation: Int) {
+        guard generation == self.generation, running, !rejected else { return }
         emit(.link(.offline))
         tearDown()
+        scheduleReconnect()
+    }
+
+    /// One retry in flight at a time. Backoff alone does not bound the socket count if
+    /// every failed attempt is allowed to queue a fresh one.
+    private func scheduleReconnect() {
+        guard !reconnectScheduled else { return }
+        reconnectScheduled = true
         let delays: [TimeInterval] = [1, 2, 5, 15]
         let delay = delays[min(reconnectAttempt, delays.count - 1)]
         reconnectAttempt += 1
         queue.asyncAfter(deadline: .now() + delay) { [weak self] in
-            guard let self, self.running, !self.rejected else { return }
+            guard let self else { return }
+            self.reconnectScheduled = false
+            // start() or reconnect() may have built a socket while this retry waited.
+            guard self.running, !self.rejected, self.task == nil else { return }
             self.connect()
         }
     }
 
     private func tearDown() {
+        generation &+= 1
         heartbeat?.cancel()
         heartbeat = nil
         task?.cancel(with: .goingAway, reason: nil)

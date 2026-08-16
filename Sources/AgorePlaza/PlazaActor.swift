@@ -53,8 +53,14 @@ final class PlazaActor {
 
     func apply(_ session: AgentSession, anchors: PlazaAnchors, slot: Int) {
         kind = session.kind
-        label.text = session.displayName
-        bubble.isHidden = session.kind != .waiting
+        // Assigning either one re-rasterises the label, and apply() runs on every refresh.
+        if label.text != session.displayName {
+            label.text = session.displayName
+        }
+        let hidesBubble = session.kind != .waiting
+        if bubble.isHidden != hidesBubble {
+            bubble.isHidden = hidesBubble
+        }
         if session.kind != .idle {
             node.alpha = restingAlpha
             node.removeAction(forKey: "leave")
@@ -77,7 +83,7 @@ final class PlazaActor {
     }
 
     func tick(anchors: PlazaAnchors) {
-        frame += 1
+        frame = (frame + 1) % PixelArt.characterFrames
         let moving = node.action(forKey: "walk") != nil || kind == .running || kind == .thinking
         let visualKind = moving && kind == .idle ? .thinking : kind
         let texture = PixelArt.character(
@@ -86,7 +92,9 @@ final class PlazaActor {
             frame: frame,
             small: isSubagent
         )
-        node.texture = texture
+        if node.texture !== texture {
+            node.texture = texture
+        }
         if kind == .running || kind == .thinking, node.action(forKey: "walk") == nil {
             let wander = CGPoint(
                 x: node.position.x + CGFloat.random(in: -26...26),

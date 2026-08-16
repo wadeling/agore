@@ -95,10 +95,36 @@ struct PixelCanvas {
 enum PixelArt {
     static let characterWidth = 16
     static let characterHeight = 20
+    static let characterFrames = 6
     static let fountainWidth = 28
     static let fountainHeight = 18
 
+    /// Every sprite is a pure function of a handful of inputs, so the whole plaza needs
+    /// only a few dozen textures. Building them per frame instead would hand SpriteKit a
+    /// new GPU allocation several times a second per actor, which never comes back.
+    private static var cache: [TextureKey: SKTexture] = [:]
+
+    private enum TextureKey: Hashable {
+        case background(PlazaLayout)
+        case fountain(phase: Int)
+        case sleeper(phase: Int)
+        case sleepZ
+        case bubble
+        case character(skin: UInt32, hair: UInt32, tunic: UInt32, kind: ActivityKind, phase: Int, small: Bool)
+    }
+
+    private static func cached(_ key: TextureKey, _ build: () -> SKTexture) -> SKTexture {
+        if let texture = cache[key] { return texture }
+        let texture = build()
+        cache[key] = texture
+        return texture
+    }
+
     static func plazaBackground(_ layout: PlazaLayout) -> SKTexture {
+        cached(.background(layout)) { buildPlazaBackground(layout) }
+    }
+
+    private static func buildPlazaBackground(_ layout: PlazaLayout) -> SKTexture {
         let width = layout.worldWidth
         let height = layout.worldHeight
         let horizon = layout.horizonY
@@ -137,8 +163,12 @@ enum PixelArt {
     }
 
     static func fountainFrame(_ frame: Int) -> SKTexture {
+        let wobble = phase(frame, over: 3)
+        return cached(.fountain(phase: wobble)) { buildFountainFrame(wobble) }
+    }
+
+    private static func buildFountainFrame(_ wobble: Int) -> SKTexture {
         var canvas = PixelCanvas(width: fountainWidth, height: fountainHeight, fill: Palette.clear)
-        let wobble = frame % 3
         canvas.fill(0, 0, fountainWidth, 3, Palette.basin)
         canvas.fill(0, 2, fountainWidth, 1, Palette.columnShadow)
         canvas.fill(2, 3, 24, 5, Palette.water)
@@ -153,8 +183,12 @@ enum PixelArt {
 
     /// The plaza's caretaker: shown napping while no coding agent is awake.
     static func sleeper(frame: Int) -> SKTexture {
+        let breath = phase(frame, over: 2)
+        return cached(.sleeper(phase: breath)) { buildSleeper(breath) }
+    }
+
+    private static func buildSleeper(_ breath: Int) -> SKTexture {
         var canvas = PixelCanvas(width: 22, height: 12, fill: Palette.clear)
-        let breath = frame % 2
         let skin = Palette.skin(3)
         let hair = Palette.hair(3)
         let tunic = Palette.tunic(3)
@@ -169,6 +203,10 @@ enum PixelArt {
     }
 
     static func sleepZ() -> SKTexture {
+        cached(.sleepZ) { buildSleepZ() }
+    }
+
+    private static func buildSleepZ() -> SKTexture {
         var canvas = PixelCanvas(width: 6, height: 6, fill: Palette.clear)
         canvas.fill(1, 4, 4, 1, Palette.ink)
         canvas.set(3, 3, Palette.ink)
@@ -178,10 +216,30 @@ enum PixelArt {
     }
 
     static func character(hash: Int, kind: ActivityKind, frame: Int, small: Bool) -> SKTexture {
-        var canvas = PixelCanvas(width: characterWidth, height: characterHeight)
         let skin = Palette.skin(hash)
         let hair = Palette.hair(hash)
         let tunic = Palette.tunic(hash)
+        // The walk cycle repeats every 2 frames and the breath every 6, so frame 6 draws
+        // exactly what frame 0 does. Folding the counter onto that period is what keeps
+        // an actor that ticks all night down to six textures per activity.
+        let step = phase(frame, over: characterFrames)
+        let key = TextureKey.character(
+            skin: skin, hair: hair, tunic: tunic, kind: kind, phase: step, small: small
+        )
+        return cached(key) {
+            buildCharacter(skin: skin, hair: hair, tunic: tunic, kind: kind, frame: step, small: small)
+        }
+    }
+
+    private static func buildCharacter(
+        skin: UInt32,
+        hair: UInt32,
+        tunic: UInt32,
+        kind: ActivityKind,
+        frame: Int,
+        small: Bool
+    ) -> SKTexture {
+        var canvas = PixelCanvas(width: characterWidth, height: characterHeight)
         let walk = frame % 2 == 0
         // Everything above the legs rides a slow breath so even a seated agent reads as
         // alive; the legs stretch by the same pixel to avoid a gap at the waist.
@@ -234,6 +292,10 @@ enum PixelArt {
     }
 
     static func bubble() -> SKTexture {
+        cached(.bubble) { buildBubble() }
+    }
+
+    private static func buildBubble() -> SKTexture {
         var canvas = PixelCanvas(width: 14, height: 12, fill: Palette.clear)
         canvas.fill(1, 3, 12, 8, Palette.bubble)
         canvas.fill(1, 3, 12, 1, Palette.ink)
@@ -246,6 +308,11 @@ enum PixelArt {
         canvas.set(6, 5, Palette.ink)
         canvas.set(7, 8, Palette.ink)
         return canvas.texture()
+    }
+
+    private static func phase(_ frame: Int, over period: Int) -> Int {
+        let step = frame % period
+        return step < 0 ? step + period : step
     }
 
     private static func drawColumn(_ canvas: inout PixelCanvas, x: Int, baseY: Int, topY: Int) {

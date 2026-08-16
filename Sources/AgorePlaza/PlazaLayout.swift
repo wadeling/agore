@@ -1,7 +1,7 @@
 import CoreGraphics
 
 /// Two distinct plazas: the menu-bar strip and the square courtyard window.
-public enum PlazaLayout: Sendable {
+public enum PlazaLayout: Hashable, Sendable {
     case strip
     case courtyard
 

@@ -114,6 +114,13 @@ final class PlazaContentViewController: NSViewController {
         refresh()
     }
 
+    /// Both surfaces stay alive for the whole session, so a hidden strip would otherwise
+    /// keep animating an empty plaza behind the user's back.
+    override func viewDidDisappear() {
+        super.viewDidDisappear()
+        plazaView.isPaused = true
+    }
+
     func refresh() {
         plazaView.sync(store: store)
         let hooks = store.hooksInstalled ? "hooks on" : "hooks off"
