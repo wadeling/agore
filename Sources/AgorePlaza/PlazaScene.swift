@@ -5,6 +5,7 @@ public final class PlazaScene: SKScene {
     private let layout: PlazaLayout
     private let anchors: PlazaAnchors
     private var actors: [String: PlazaActor] = [:]
+    private var leaving: [PlazaActor] = []
     private var slots: [String: Int] = [:]
     private var sleeper: SKNode?
     private var tickAccum: TimeInterval = 0
@@ -64,12 +65,12 @@ public final class PlazaScene: SKScene {
         let incomingIds = Set(sessions.map(\.id))
 
         for (id, actor) in actors where !incomingIds.contains(id) {
-            actor.node.run(.sequence([
-                .fadeOut(withDuration: 0.25),
-                .removeFromParent(),
-            ]))
             actors.removeValue(forKey: id)
             slots.removeValue(forKey: id)
+            leaving.append(actor)
+            actor.leave(anchors: anchors) { [weak self] in
+                self?.leaving.removeAll { $0 === actor }
+            }
         }
 
         for session in sessions {
@@ -158,6 +159,9 @@ public final class PlazaScene: SKScene {
         guard tickAccum >= 0.18 else { return }
         tickAccum = 0
         for actor in actors.values {
+            actor.tick(anchors: anchors)
+        }
+        for actor in leaving {
             actor.tick(anchors: anchors)
         }
     }

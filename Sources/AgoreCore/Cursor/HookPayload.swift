@@ -9,6 +9,7 @@ struct HookPayload: Decodable {
     var subagent_id: String?
     var parent_conversation_id: String?
     var workspace_roots: [String]?
+    var tool_use_id: String?
 
     func asPresenceEvent(receivedAt: Date = Date()) -> PresenceEvent? {
         let eventName = hook_event_name
@@ -39,6 +40,7 @@ struct HookPayload: Decodable {
             projectSlug: slug,
             occurredAt: occurred,
             hookEventName: eventName,
+            toolUseId: tool_use_id?.isEmpty == false ? tool_use_id : nil,
             source: .hook
         )
     }

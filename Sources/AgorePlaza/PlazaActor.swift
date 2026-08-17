@@ -12,6 +12,7 @@ final class PlazaActor {
     private var kind: ActivityKind
     private var frame = 0
     private var target: CGPoint
+    private var isLeaving = false
 
     init(session: AgentSession, position: CGPoint) {
         self.id = session.id
@@ -61,10 +62,9 @@ final class PlazaActor {
         if bubble.isHidden != hidesBubble {
             bubble.isHidden = hidesBubble
         }
-        if session.kind != .idle {
-            node.alpha = restingAlpha
-            node.removeAction(forKey: "leave")
-        }
+        // An idle agent has not left, it is just resting: dimming it says so without
+        // taking the pixel person off the plaza.
+        node.alpha = session.kind == .idle ? restingAlpha * 0.75 : restingAlpha
         target = anchors.spot(for: session, slot: slot)
         let distance = hypot(target.x - node.position.x, target.y - node.position.y)
         if distance > 4 {
@@ -72,20 +72,30 @@ final class PlazaActor {
             let duration = min(2.8, TimeInterval(distance / 40))
             node.run(.move(to: target, duration: duration), withKey: "walk")
         }
-        if session.kind == .idle {
-            let exit = anchors.exit(near: node.position)
-            node.removeAction(forKey: "walk")
-            node.run(.sequence([
-                .move(to: exit, duration: 1.6),
-                .fadeOut(withDuration: 0.3),
-            ]), withKey: "leave")
+    }
+
+    /// Leaving is losing your place on the roster, not going quiet: the plaza calls this
+    /// only once presence is actually gone, and the person walks out through a gate.
+    func leave(anchors: PlazaAnchors, completion: @escaping () -> Void) {
+        guard !isLeaving else { return }
+        isLeaving = true
+        node.removeAction(forKey: "walk")
+        node.run(.sequence([
+            .move(to: anchors.exit(near: node.position), duration: 1.2),
+            .fadeOut(withDuration: 0.3),
+        ])) { [node] in
+            node.removeFromParent()
+            completion()
         }
     }
 
     func tick(anchors: PlazaAnchors) {
         frame = (frame + 1) % PixelArt.characterFrames
-        let moving = node.action(forKey: "walk") != nil || kind == .running || kind == .thinking
-        let visualKind = moving && kind == .idle ? .thinking : kind
+        let moving = node.action(forKey: "walk") != nil || isLeaving
+            || kind == .running || kind == .thinking
+        // The idle sprite carries the walk cycle, so a resting agent borrows the waiting
+        // pose instead: standing and breathing rather than marching on the spot.
+        let visualKind: ActivityKind = kind == .idle ? (moving ? .idle : .waiting) : kind
         let texture = PixelArt.character(
             hash: hashValue,
             kind: visualKind,
@@ -95,7 +105,7 @@ final class PlazaActor {
         if node.texture !== texture {
             node.texture = texture
         }
-        if kind == .running || kind == .thinking, node.action(forKey: "walk") == nil {
+        if kind == .running || kind == .thinking, !isLeaving, node.action(forKey: "walk") == nil {
             let wander = CGPoint(
                 x: node.position.x + CGFloat.random(in: -26...26),
                 y: node.position.y + CGFloat.random(in: anchors.layout == .strip ? -3...3 : -18...18)
@@ -177,12 +187,10 @@ struct PlazaAnchors {
         let row = (slot / benches.count) % 2
         let depth = CGFloat(row) * (layout == .strip ? -4 : 16)
         switch session.kind {
-        case .reading, .writing, .waiting:
+        case .reading, .writing, .waiting, .idle:
             return benches[lane].offsetBy(dx: 0, dy: depth)
         case .thinking, .running:
             return strolls[lane].offsetBy(dx: 0, dy: depth)
-        case .idle:
-            return exit(near: benches[lane])
         }
     }
 

@@ -26,6 +26,20 @@ final class HookInstallerTests: XCTestCase {
         XCTAssertEqual(preAfter?.count, 1)
     }
 
+    func testOlderInstallIsNotTreatedAsComplete() {
+        let installer = HookInstaller(
+            hooksFile: URL(fileURLWithPath: "/tmp/unused.json"),
+            hooksDirectory: URL(fileURLWithPath: "/tmp")
+        )
+        let older: [String: Any] = [
+            "version": 1,
+            "hooks": ["preToolUse": [["command": "./hooks/agore-forward.sh"]]],
+        ]
+        XCTAssertTrue(installer.containsAgore(older))
+        XCTAssertFalse(installer.isSubscriptionComplete(older))
+        XCTAssertTrue(installer.isSubscriptionComplete(installer.mergeAgore(into: older)))
+    }
+
     func testWritesHooksFile() throws {
         let dir = FileManager.default.temporaryDirectory.appendingPathComponent("agore-hooks-\(UUID().uuidString)")
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)

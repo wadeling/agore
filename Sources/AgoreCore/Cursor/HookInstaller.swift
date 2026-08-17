@@ -1,10 +1,18 @@
 import Foundation
 
 public struct HookInstaller: Sendable {
+    /// Cursor stays silent while a tool runs, so the closing half of each pair
+    /// (postToolUse, afterShellExecution, afterMCPExecution) is what tells us a long
+    /// command finished rather than the agent having quit.
     public static let subscribedEvents = [
         "preToolUse",
+        "postToolUse",
+        "postToolUseFailure",
         "afterFileEdit",
         "beforeShellExecution",
+        "afterShellExecution",
+        "beforeMCPExecution",
+        "afterMCPExecution",
         "subagentStart",
         "subagentStop",
         "afterAgentThought",
@@ -26,7 +34,7 @@ public struct HookInstaller: Sendable {
 
     public var isInstalled: Bool {
         guard let json = try? loadHooks() else { return false }
-        return containsAgore(json)
+        return isSubscriptionComplete(json)
     }
 
     @discardableResult
@@ -45,15 +53,16 @@ public struct HookInstaller: Sendable {
         return destination
     }
 
+    /// Reconciles against the full event list rather than stopping at the first Agore
+    /// entry, so an install made by an older build picks up newly subscribed events.
     @discardableResult
     public func ensureInstalled(from bundle: Bundle = .main) throws -> Bool {
         try syncForwarder(from: bundle)
-        var json = (try? loadHooks()) ?? defaultHooks()
-        if containsAgore(json) {
+        let json = (try? loadHooks()) ?? defaultHooks()
+        if isSubscriptionComplete(json) {
             return false
         }
-        json = mergeAgore(into: json)
-        try saveHooks(json)
+        try saveHooks(mergeAgore(into: json))
         return true
     }
 
@@ -91,6 +100,13 @@ public struct HookInstaller: Sendable {
             }
         }
         return false
+    }
+
+    func isSubscriptionComplete(_ json: [String: Any]) -> Bool {
+        guard let hooks = json["hooks"] as? [String: Any] else { return false }
+        return Self.subscribedEvents.allSatisfy { event in
+            (hooks[event] as? [[String: Any]])?.contains(where: isAgoreEntry) == true
+        }
     }
 
     func mergeAgore(into json: [String: Any]) -> [String: Any] {

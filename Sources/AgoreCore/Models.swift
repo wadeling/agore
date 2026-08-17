@@ -68,6 +68,9 @@ public struct PresenceEvent: Equatable, Sendable {
     public var projectSlug: String
     public var occurredAt: Date
     public var hookEventName: String?
+    /// Pairs a tool call's opening hook with its closing one. Only the generic
+    /// preToolUse/postToolUse family carries it.
+    public var toolUseId: String?
     public var source: PresenceSource
 
     public init(
@@ -78,6 +81,7 @@ public struct PresenceEvent: Equatable, Sendable {
         projectSlug: String = "",
         occurredAt: Date = Date(),
         hookEventName: String? = nil,
+        toolUseId: String? = nil,
         source: PresenceSource
     ) {
         self.conversationId = conversationId
@@ -87,6 +91,7 @@ public struct PresenceEvent: Equatable, Sendable {
         self.projectSlug = projectSlug
         self.occurredAt = occurredAt
         self.hookEventName = hookEventName
+        self.toolUseId = toolUseId
         self.source = source
     }
 
@@ -192,8 +197,13 @@ public enum AgoreConstants {
     public static let plazaProtocolVersion = 1
     public static let plazaHeartbeat: TimeInterval = 25
     public static let plazaDebounce: TimeInterval = 0.4
-    /// Silence for this long counts as the agent having gone to sleep.
+    /// Silence for this long counts as the agent having gone to sleep, unless a tool
+    /// call is still open — Cursor emits nothing at all while one runs.
     public static let idleTimeout: TimeInterval = 2 * 60
+    /// Ceiling on how long an unclosed tool call keeps an agent awake. A hook that
+    /// never reports back (fail-open timeout, app restart mid-call) must not pin
+    /// someone to the plaza forever.
+    public static let toolCallCeiling: TimeInterval = 30 * 60
     /// How long a departing agent stays on stage, long enough to walk off screen.
     public static let departureGrace: TimeInterval = 6
     public static let hookCommand = "./hooks/agore-forward.sh"

@@ -13,6 +13,9 @@ public final class PresenceStore: ObservableObject {
     public var identity = ClientIdentity.ephemeral()
     public var onInstanceChange: ((PlazaMember) -> Void)?
 
+    private static let shellCall = "shell"
+    private static let mcpCall = "mcp"
+
     public let idleTimeout: TimeInterval
     private let databaseURL: URL
     private let sqlite = SQLiteStore()
@@ -20,6 +23,11 @@ public final class PresenceStore: ObservableObject {
     private var remoteRoster: [String: PlazaMember] = [:]
     private var idleTimer: Timer?
     private var lastPublished: PlazaMember?
+    private var lastPublishedAt: Date?
+    /// Tool calls that opened but have not reported back, keyed by session then by
+    /// tool_use_id. Cursor goes quiet for the whole duration of a tool, so without this
+    /// an agent on a five minute test run is indistinguishable from one that quit.
+    private var inFlight: [String: [String: Date]] = [:]
 
     public init(
         idleTimeout: TimeInterval = AgoreConstants.idleTimeout,
@@ -54,6 +62,8 @@ public final class PresenceStore: ObservableObject {
                 return
             }
         }
+
+        trackToolCall(event)
 
         if event.hookEventName == "sessionEnd" || event.kind == .idle && event.hookEventName == "subagentStop" {
             if var existing = byId[event.conversationId] {
@@ -101,6 +111,53 @@ public final class PresenceStore: ObservableObject {
         notifyInstanceChange()
     }
 
+    /// Opens a slot on the hook that starts a tool call and closes it on the matching
+    /// one, so the idle sweep can tell "waiting on a slow command" from "gone".
+    private func trackToolCall(_ event: PresenceEvent) {
+        guard event.source == .hook, let name = event.hookEventName else { return }
+        switch name {
+        case "preToolUse":
+            open(event.toolUseId, for: event.conversationId, at: event.occurredAt)
+        case "postToolUse", "postToolUseFailure":
+            close(event.toolUseId, for: event.conversationId)
+        // Shell and MCP pairs carry no call id. Keyed by event name they still bracket
+        // the one command a conversation can have outstanding, which covers Cursor
+        // builds whose preToolUse payload omits tool_use_id.
+        case "beforeShellExecution":
+            open(Self.shellCall, for: event.conversationId, at: event.occurredAt)
+        case "afterShellExecution":
+            close(Self.shellCall, for: event.conversationId)
+        case "beforeMCPExecution":
+            open(Self.mcpCall, for: event.conversationId, at: event.occurredAt)
+        case "afterMCPExecution":
+            close(Self.mcpCall, for: event.conversationId)
+        // The agent loop ended, so nothing it started is still running.
+        case "stop", "sessionEnd", "subagentStop":
+            inFlight.removeValue(forKey: event.conversationId)
+        default:
+            break
+        }
+    }
+
+    private func open(_ call: String?, for sessionId: String, at started: Date) {
+        guard let call, !call.isEmpty else { return }
+        inFlight[sessionId, default: [:]][call] = started
+    }
+
+    private func close(_ call: String?, for sessionId: String) {
+        guard let call, !call.isEmpty else { return }
+        inFlight[sessionId]?.removeValue(forKey: call)
+        if inFlight[sessionId]?.isEmpty == true {
+            inFlight.removeValue(forKey: sessionId)
+        }
+    }
+
+    /// True while a tool call this session started has yet to report back.
+    public func isBusy(_ sessionId: String, at now: Date = Date()) -> Bool {
+        guard let calls = inFlight[sessionId] else { return false }
+        return calls.values.contains { now.timeIntervalSince($0) < AgoreConstants.toolCallCeiling }
+    }
+
     public func applyPlaza(_ inbound: PlazaInbound) {
         switch inbound {
         case .link(let state):
@@ -134,6 +191,9 @@ public final class PresenceStore: ObservableObject {
             if session.kind == .idle {
                 return now.timeIntervalSince(session.lastSeen) < AgoreConstants.departureGrace
             }
+            if isBusy(session.id, at: now) {
+                return true
+            }
             return now.timeIntervalSince(session.lastSeen) < idleTimeout
         }
     }
@@ -147,36 +207,34 @@ public final class PresenceStore: ObservableObject {
             active.contains { $0.kind == candidate }
         } ?? .idle
         let project = active.first(where: { !$0.projectSlug.isEmpty })?.projectSlug ?? ""
+        // Everyone ages us out on this timestamp, so an open tool call has to count as
+        // being seen even though it produces no events of its own.
+        let seen = active.contains { isBusy($0.id, at: now) }
+            ? now
+            : (active.map(\.lastSeen).max() ?? lastEventAt ?? now)
         return PlazaMember(
             id: identity.clientId,
             displayName: ClientIdentity.displayName,
             kind: kind,
             project: project,
-            lastSeen: lastEventAt ?? now,
+            lastSeen: seen,
             isLocal: true
         )
     }
 
+    /// Standing on the plaza is about being connected, not about being busy. The server
+    /// drops a client from the roster the moment its socket closes, so everyone still
+    /// listed — ourselves first of all — gets a pixel person, idle or not.
     public func plazaMembers(at now: Date = Date()) -> [PlazaMember] {
         var members = remoteRoster
         let local = instancePresence(at: now)
-        if shouldShow(local, at: now) {
-            members[local.id] = local
-        }
-        return members.values
-            .filter { shouldShow($0, at: now) }
-            .sorted { $0.lastSeen > $1.lastSeen }
+        members[local.id] = local
+        return members.values.sorted { $0.lastSeen > $1.lastSeen }
     }
 
+    /// True when nothing is happening anywhere: no local agent awake and no peers.
     public var isEmpty: Bool {
-        plazaMembers().isEmpty
-    }
-
-    private func shouldShow(_ member: PlazaMember, at now: Date) -> Bool {
-        if member.kind == .idle {
-            return now.timeIntervalSince(member.lastSeen) < AgoreConstants.departureGrace
-        }
-        return now.timeIntervalSince(member.lastSeen) < idleTimeout
+        activeSessions().isEmpty && remoteRoster.isEmpty
     }
 
     private func startIdleTimer() {
@@ -192,8 +250,10 @@ public final class PresenceStore: ObservableObject {
     private func sweepIdle() {
         let now = Date()
         var changed = false
+        pruneExpiredCalls(at: now)
         for (id, session) in byId {
             if now.timeIntervalSince(session.lastSeen) >= idleTimeout, session.kind != .idle {
+                if isBusy(id, at: now) { continue }
                 var next = session
                 next.kind = .idle
                 next.lastSeen = now
@@ -207,6 +267,7 @@ public final class PresenceStore: ObservableObject {
             .map(\.key)
         for id in stale {
             byId.removeValue(forKey: id)
+            inFlight.removeValue(forKey: id)
             changed = true
         }
         if changed { publish() }
@@ -215,13 +276,24 @@ public final class PresenceStore: ObservableObject {
         let people = plazaMembers().count
         switch plazaLink {
         case .online:
-            statusMessage = people == 0 ? "plaza on" : "\(people) people"
+            statusMessage = "\(people) people"
         case .unauthorized:
             statusMessage = "plaza unauthorized"
         case .connecting:
             statusMessage = "plaza connecting"
         case .offline:
-            statusMessage = people == 0 ? "waiting for cursor" : "\(people) people · plaza offline"
+            statusMessage = "\(people) people · plaza offline"
+        }
+    }
+
+    private func pruneExpiredCalls(at now: Date) {
+        for (sessionId, calls) in inFlight {
+            let live = calls.filter { now.timeIntervalSince($0.value) < AgoreConstants.toolCallCeiling }
+            if live.isEmpty {
+                inFlight.removeValue(forKey: sessionId)
+            } else if live.count != calls.count {
+                inFlight[sessionId] = live
+            }
         }
     }
 
@@ -230,13 +302,18 @@ public final class PresenceStore: ObservableObject {
         objectWillChange.send()
     }
 
-    private func notifyInstanceChange() {
-        let current = instancePresence()
-        if current.kind != lastPublished?.kind
+    private func notifyInstanceChange(at now: Date = Date()) {
+        let current = instancePresence(at: now)
+        let changed = current.kind != lastPublished?.kind
             || current.project != lastPublished?.project
-            || current.displayName != lastPublished?.displayName {
-            lastPublished = current
-            onInstanceChange?(current)
-        }
+            || current.displayName != lastPublished?.displayName
+        // Peers time us out on the timestamp we last sent them, so a long tool call
+        // needs a refresh even when the activity itself has not changed.
+        let stale = current.kind != .idle
+            && (lastPublishedAt.map { now.timeIntervalSince($0) >= AgoreConstants.plazaHeartbeat } ?? true)
+        guard changed || stale else { return }
+        lastPublished = current
+        lastPublishedAt = now
+        onInstanceChange?(current)
     }
 }

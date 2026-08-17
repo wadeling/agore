@@ -16,8 +16,12 @@ public enum ActivityMapper {
             return .idle
         case "afterFileEdit":
             return .writing
-        case "beforeShellExecution", "afterShellExecution":
+        case "beforeShellExecution", "beforeMCPExecution":
             return .running
+        // A finished tool hands control back to the model, so the agent is chewing on
+        // the result rather than still running it.
+        case "afterShellExecution", "afterMCPExecution", "postToolUse", "postToolUseFailure":
+            return .thinking
         default:
             return kind(toolName: toolName) ?? .thinking
         }

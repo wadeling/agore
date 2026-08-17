@@ -21,6 +21,21 @@ final class HookPayloadTests: XCTestCase {
         XCTAssertNil(event.parentId)
     }
 
+    func testForwardsToolUseId() throws {
+        let json = """
+        {
+          "conversation_id": "abc-123",
+          "hook_event_name": "postToolUse",
+          "tool_name": "Shell",
+          "tool_use_id": "call-9",
+          "project_slug": "agore"
+        }
+        """.data(using: .utf8)!
+        let event = try XCTUnwrap(JSONDecoder().decode(HookPayload.self, from: json).asPresenceEvent())
+        XCTAssertEqual(event.toolUseId, "call-9")
+        XCTAssertEqual(event.kind, .thinking)
+    }
+
     func testSubagentUsesSubagentId() throws {
         let json = """
         {

@@ -110,15 +110,23 @@ final class PlazaContentViewController: NSViewController {
 
     override func viewDidAppear() {
         super.viewDidAppear()
-        plazaView.isPaused = false
-        refresh()
+        setActive(true)
     }
 
     /// Both surfaces stay alive for the whole session, so a hidden strip would otherwise
     /// keep animating an empty plaza behind the user's back.
     override func viewDidDisappear() {
         super.viewDidDisappear()
-        plazaView.isPaused = true
+        setActive(false)
+    }
+
+    /// Ordering a non-activating panel in and out does not reliably pair appear with
+    /// disappear, and a scene left paused renders nothing that was added while it slept.
+    func setActive(_ active: Bool) {
+        plazaView.isPaused = !active
+        if active {
+            refresh()
+        }
     }
 
     func refresh() {
@@ -126,8 +134,9 @@ final class PlazaContentViewController: NSViewController {
         let hooks = store.hooksInstalled ? "hooks on" : "hooks off"
         let time = store.lastEventAt.map(Self.clock.string(from:)) ?? "--:--"
         let live = store.plazaMembers().count
-        let population = live == 0 ? "waiting for cursor" : "\(live) person\(live == 1 ? "" : "s")"
-        statusField.stringValue = [population, plazaLabel(store.plazaLink), hooks, time, hint]
+        let population = "\(live) person\(live == 1 ? "" : "s")"
+        let activity = store.instancePresence().kind.rawValue
+        statusField.stringValue = [population, activity, plazaLabel(store.plazaLink), hooks, time, hint]
             .compactMap { $0 }
             .joined(separator: " · ")
         actionButton.isHidden = store.hooksInstalled

@@ -27,6 +27,7 @@ payload = {
     "occurred_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
     "subagent_id": data.get("subagent_id"),
     "parent_conversation_id": data.get("parent_conversation_id"),
+    "tool_use_id": data.get("tool_use_id") or data.get("tool_call_id"),
 }
 
 port_file = os.path.expanduser("~/Library/Application Support/Agore/ingest.port")

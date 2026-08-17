@@ -14,6 +14,11 @@ final class ActivityMapperTests: XCTestCase {
         XCTAssertEqual(ActivityMapper.kind(eventName: "sessionEnd", toolName: nil), .idle)
         XCTAssertEqual(ActivityMapper.kind(eventName: "afterFileEdit", toolName: nil), .writing)
         XCTAssertEqual(ActivityMapper.kind(eventName: "preToolUse", toolName: "Read"), .reading)
+        XCTAssertEqual(ActivityMapper.kind(eventName: "beforeShellExecution", toolName: nil), .running)
+        XCTAssertEqual(ActivityMapper.kind(eventName: "afterShellExecution", toolName: nil), .thinking)
+        XCTAssertEqual(ActivityMapper.kind(eventName: "postToolUse", toolName: "Shell"), .thinking)
+        XCTAssertEqual(ActivityMapper.kind(eventName: "postToolUseFailure", toolName: "Shell"), .thinking)
+        XCTAssertEqual(ActivityMapper.kind(eventName: "beforeMCPExecution", toolName: nil), .running)
     }
 
     func testProjectSlug() {

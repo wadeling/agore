@@ -72,6 +72,143 @@ final class PresenceStoreTests: XCTestCase {
         XCTAssertTrue(store.isEmpty)
     }
 
+    func testOpenToolCallOutlivesIdleTimeout() {
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("agore-store-\(UUID().uuidString).sqlite")
+        let store = PresenceStore(idleTimeout: 60, databaseURL: url)
+        store.identity = ClientIdentity(clientId: "me", sessionId: "s")
+        store.open()
+        let started = Date().addingTimeInterval(-300)
+        store.apply(
+            PresenceEvent(
+                conversationId: "c1",
+                kind: .running,
+                toolName: "Shell",
+                projectSlug: "agore",
+                occurredAt: started,
+                hookEventName: "preToolUse",
+                toolUseId: "call-1",
+                source: .hook
+            )
+        )
+        // Five minutes of silence, but the command never reported back.
+        XCTAssertTrue(store.isBusy("c1"))
+        XCTAssertEqual(store.activeSessions().count, 1)
+        XCTAssertEqual(store.instancePresence().kind, .running)
+        XCTAssertFalse(store.isEmpty)
+    }
+
+    func testToolCallCloseLetsSessionGoIdle() {
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("agore-store-\(UUID().uuidString).sqlite")
+        let store = PresenceStore(idleTimeout: 60, databaseURL: url)
+        store.open()
+        let started = Date().addingTimeInterval(-300)
+        store.apply(
+            PresenceEvent(
+                conversationId: "c1",
+                kind: .running,
+                toolName: "Shell",
+                projectSlug: "agore",
+                occurredAt: started,
+                hookEventName: "preToolUse",
+                toolUseId: "call-1",
+                source: .hook
+            )
+        )
+        store.apply(
+            PresenceEvent(
+                conversationId: "c1",
+                kind: .thinking,
+                toolName: "Shell",
+                projectSlug: "agore",
+                occurredAt: started.addingTimeInterval(1),
+                hookEventName: "postToolUse",
+                toolUseId: "call-1",
+                source: .hook
+            )
+        )
+        XCTAssertFalse(store.isBusy("c1"))
+        XCTAssertTrue(store.activeSessions().isEmpty)
+        XCTAssertTrue(store.isEmpty)
+    }
+
+    func testShellPairTracksCallWithoutToolUseId() {
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("agore-store-\(UUID().uuidString).sqlite")
+        let store = PresenceStore(idleTimeout: 60, databaseURL: url)
+        store.open()
+        let started = Date().addingTimeInterval(-300)
+        store.apply(
+            PresenceEvent(
+                conversationId: "c1",
+                kind: .running,
+                projectSlug: "agore",
+                occurredAt: started,
+                hookEventName: "beforeShellExecution",
+                source: .hook
+            )
+        )
+        XCTAssertTrue(store.isBusy("c1"))
+        store.apply(
+            PresenceEvent(
+                conversationId: "c1",
+                kind: .thinking,
+                projectSlug: "agore",
+                occurredAt: started.addingTimeInterval(1),
+                hookEventName: "afterShellExecution",
+                source: .hook
+            )
+        )
+        XCTAssertFalse(store.isBusy("c1"))
+    }
+
+    func testStopClearsOpenToolCalls() {
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("agore-store-\(UUID().uuidString).sqlite")
+        let store = PresenceStore(idleTimeout: 60, databaseURL: url)
+        store.open()
+        store.apply(
+            PresenceEvent(
+                conversationId: "c1",
+                kind: .running,
+                toolName: "Shell",
+                projectSlug: "agore",
+                hookEventName: "preToolUse",
+                toolUseId: "call-1",
+                source: .hook
+            )
+        )
+        XCTAssertTrue(store.isBusy("c1"))
+        store.apply(
+            PresenceEvent(
+                conversationId: "c1",
+                kind: .waiting,
+                projectSlug: "agore",
+                hookEventName: "stop",
+                source: .hook
+            )
+        )
+        XCTAssertFalse(store.isBusy("c1"))
+    }
+
+    func testStaleToolCallStopsCountingAfterCeiling() {
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("agore-store-\(UUID().uuidString).sqlite")
+        let store = PresenceStore(idleTimeout: 60, databaseURL: url)
+        store.open()
+        let started = Date().addingTimeInterval(-(AgoreConstants.toolCallCeiling + 60))
+        store.apply(
+            PresenceEvent(
+                conversationId: "c1",
+                kind: .running,
+                toolName: "Shell",
+                projectSlug: "agore",
+                occurredAt: started,
+                hookEventName: "preToolUse",
+                toolUseId: "call-1",
+                source: .hook
+            )
+        )
+        XCTAssertFalse(store.isBusy("c1"))
+        XCTAssertTrue(store.activeSessions().isEmpty)
+    }
+
     func testInstancePresenceFoldsConversations() {
         let url = FileManager.default.temporaryDirectory.appendingPathComponent("agore-store-\(UUID().uuidString).sqlite")
         let store = PresenceStore(idleTimeout: 60, databaseURL: url)
@@ -99,6 +236,45 @@ final class PresenceStoreTests: XCTestCase {
         XCTAssertEqual(store.plazaMembers().count, 1)
         XCTAssertEqual(store.instancePresence().kind, .writing)
         XCTAssertEqual(store.instancePresence().id, "me")
+    }
+
+    func testLocalMemberStandsOnStageWithoutAnyAgent() {
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("agore-store-\(UUID().uuidString).sqlite")
+        let store = PresenceStore(idleTimeout: 60, databaseURL: url)
+        store.identity = ClientIdentity(clientId: "me", sessionId: "s")
+        store.open()
+        XCTAssertTrue(store.isEmpty)
+        // Nothing has ever run, and the pixel person is on the plaza all the same.
+        XCTAssertEqual(store.plazaMembers().map(\.id), ["me"])
+        XCTAssertEqual(store.plazaMembers().first?.kind, .idle)
+        // Still there long after any grace period would have expired.
+        let later = Date().addingTimeInterval(3600)
+        XCTAssertEqual(store.plazaMembers(at: later).map(\.id), ["me"])
+    }
+
+    func testQuietPeerStaysUntilItLeaves() {
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("agore-store-\(UUID().uuidString).sqlite")
+        let store = PresenceStore(idleTimeout: 60, databaseURL: url)
+        store.identity = ClientIdentity(clientId: "me", sessionId: "s")
+        store.open()
+        store.applyPlaza(.presence(
+            PlazaMember(id: "other", displayName: "stoa", kind: .idle, lastSeen: Date().addingTimeInterval(-3600))
+        ))
+        XCTAssertEqual(store.plazaMembers().map(\.id).sorted(), ["me", "other"])
+        store.applyPlaza(.leave("other"))
+        XCTAssertEqual(store.plazaMembers().map(\.id), ["me"])
+    }
+
+    func testDroppedPlazaLinkClearsPeers() {
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("agore-store-\(UUID().uuidString).sqlite")
+        let store = PresenceStore(idleTimeout: 60, databaseURL: url)
+        store.identity = ClientIdentity(clientId: "me", sessionId: "s")
+        store.open()
+        store.applyPlaza(.link(.online))
+        store.applyPlaza(.presence(PlazaMember(id: "other", displayName: "stoa", kind: .reading)))
+        XCTAssertEqual(store.plazaMembers().count, 2)
+        store.applyPlaza(.link(.offline))
+        XCTAssertEqual(store.plazaMembers().map(\.id), ["me"])
     }
 
     func testRemoteRosterDoesNotDuplicateLocal() {

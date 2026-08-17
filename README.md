@@ -44,8 +44,8 @@ bar. Cursor needs to be restarted once for a freshly installed hook to take effe
 - With **Always on Top** enabled the plaza joins every Space, survives clicks elsewhere, and
   comes back automatically on the next launch
 
-The bar along the bottom shows how many agents are present, whether hooks are installed, and
-when the last event arrived.
+The bar along the bottom shows how many people are on the plaza, what your own agent is up
+to, whether hooks are installed, and when the last event arrived.
 
 ### What the pixel people are doing
 
@@ -56,10 +56,11 @@ when the last event arrived.
 | Pacing the plaza | running | `Shell`, `Task`, MCP calls, `beforeShellExecution`, … |
 | Strolling, head down | thinking | `afterAgentThought`, anything unrecognised |
 | Standing with a bubble | waiting | `stop`, `sessionStart`, a user turn |
-| Walking off screen | idle | `sessionEnd`, or two minutes of silence |
-| Asleep by the fountain | nobody home | no active agent at all |
+| Resting on a bench, dimmed | idle | `sessionEnd`, or two minutes of silence with no tool call open |
+| Walking out through a gate | gone | that client disconnected from the plaza |
 
 One pixel person per Agore client (one Cursor instance on one Mac), not per conversation.
+Yours is on the plaza from the moment Agore starts, resting until an agent wakes up.
 The name under the person is your nickname (default: this Mac's hostname). Local Cursor
 activity is folded into a single pose: running beats writing, which beats reading, and so
 on. Up to eight people hold distinct spots around the fountain; beyond that the plaza
@@ -91,17 +92,22 @@ agore-forward.sh ──POST──▶ 127.0.0.1:<random port>/events   (loopback 
 - **Transcript scanning is the fallback.** Every 30 seconds Agore checks the modification
   time of Cursor's local transcript files under `~/.cursor/projects/*/agent-transcripts/`,
   which covers cold starts and sessions that began before the hook was installed.
-- **Presence expires on a clock.** Two minutes of silence sends an agent home; it walks to
-  the nearest exit and the caretaker falls asleep once the plaza empties.
+- **Activity expires on a clock, membership does not.** Two minutes of silence sits an agent
+  down to rest, but standing on the plaza is about being connected: people only walk out once
+  the server drops their client from the roster.
+- **An open tool call holds the clock.** Cursor emits nothing at all while a tool runs, so
+  a long test command would otherwise look the same as an agent that quit. Agore pairs each
+  `preToolUse` with its `postToolUse` (and the shell and MCP hooks with their counterparts)
+  and keeps the person on stage until the call reports back, up to thirty minutes.
 
 ### Privacy
 
 Agore is built to know *that* an agent is working, not *what* it is working on. The
-forwarder sends only the conversation id, the hook event name, the tool name, and the last
-path component of the workspace folder. Prompts, file contents, diffs, and full paths never
-leave the agent. The local database (`~/Library/Application Support/Agore/presence.sqlite`)
-stores the same narrow set and prunes itself after seven days. The local hook listener
-binds to loopback only.
+forwarder sends only the conversation id, the hook event name, the tool name, the opaque
+tool call id, and the last path component of the workspace folder. Prompts, file contents,
+shell commands and their output, diffs, and full paths never leave the agent. The local
+database (`~/Library/Application Support/Agore/presence.sqlite`) stores the same narrow set
+and prunes itself after seven days. The local hook listener binds to loopback only.
 
 The shared plaza server sees even less: `client_id`, nickname, activity kind, and the
 current project folder name. A shared `AGORE_TOKEN` is required to join. Conversation
