@@ -13,6 +13,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var windowController: PlazaWindowController?
     private var statusItem: StatusItemController?
     private var scanTimer: Timer?
+    private var wakefulness: NSObjectProtocol?
 
     private var startsPinned: Bool {
         UserDefaults.standard.bool(forKey: AgoreConstants.alwaysOnTopKey)
@@ -22,6 +23,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // Stay a regular app so the Dock icon remains: clicking it opens the square
         // window. The menu bar strip is a second, smaller surface.
         NSApp.setActivationPolicy(.regular)
+
+        // A menu bar app is in the background nearly all the time, and App Nap suspends
+        // a napped process down to its timers: the idle sweep, the plaza heartbeat and
+        // the strip's animation all stop until the user clicks the icon, which is what
+        // made presence sit on a stale activity for as long as nobody looked at it.
+        // Idle system sleep stays allowed so the Mac can still doze off on its own.
+        wakefulness = ProcessInfo.processInfo.beginActivity(
+            options: [.userInitiatedAllowingIdleSystemSleep],
+            reason: "tracking cursor agent presence"
+        )
 
         store.identity = identity
         store.onInstanceChange = { [plaza] member in
@@ -76,6 +87,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationWillTerminate(_ notification: Notification) {
         plaza.stop()
         ingest.stop()
+        if let wakefulness {
+            ProcessInfo.processInfo.endActivity(wakefulness)
+        }
     }
 
     func presentPlazaWindow() {

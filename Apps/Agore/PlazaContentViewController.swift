@@ -15,6 +15,7 @@ final class PlazaContentViewController: NSViewController {
     private let actionButton = NSButton(title: "Install Hooks", target: nil, action: nil)
     private var cancellables: Set<AnyCancellable> = []
     private var refreshTimer: Timer?
+    private var isActive = false
 
     init(
         store: PresenceStore,
@@ -34,6 +35,7 @@ final class PlazaContentViewController: NSViewController {
             height: max(AgoreConstants.plazaHeight, size.height - AgoreConstants.statusHeight)
         )
         self.plazaView = PlazaView(frame: plazaFrame, layout: layout)
+        self.plazaView.isPaused = true
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -102,6 +104,7 @@ final class PlazaContentViewController: NSViewController {
         // Presence expires on a clock, not on a store mutation, so departures need a tick
         // of their own or a finished agent lingers on screen.
         refreshTimer = Timer.scheduledTimer(withTimeInterval: 2, repeats: true) { [weak self] _ in
+            self?.resumeIfOnScreen()
             self?.refresh()
         }
         refreshTimer?.tolerance = 0.5
@@ -110,19 +113,32 @@ final class PlazaContentViewController: NSViewController {
 
     override func viewDidAppear() {
         super.viewDidAppear()
-        setActive(true)
+        resumeIfOnScreen()
     }
 
-    /// Both surfaces stay alive for the whole session, so a hidden strip would otherwise
-    /// keep animating an empty plaza behind the user's back.
+    /// Both surfaces stay alive for the whole session, so a strip nobody can see would
+    /// otherwise keep animating an empty plaza at thirty frames a second. AppKit reports
+    /// this for a window that is merely buried too, not only for one ordered out.
     override func viewDidDisappear() {
         super.viewDidDisappear()
         setActive(false)
     }
 
-    /// Ordering a non-activating panel in and out does not reliably pair appear with
-    /// disappear, and a scene left paused renders nothing that was added while it slept.
+    /// Going to sleep can be edge driven, but waking up cannot: a resume that never
+    /// arrives — an overnight display sleep is enough — leaves the plaza frozen on
+    /// whatever pose it held while the status bar beside it keeps counting up, and
+    /// nothing else would ever repair it. Two property reads a tick buys that back.
+    private func resumeIfOnScreen() {
+        guard let window = view.window, window.isVisible else { return }
+        guard window.occlusionState.contains(.visible) else { return }
+        setActive(true)
+    }
+
+    /// A scene left paused renders nothing that was added while it slept, so becoming
+    /// active has to redraw from the store rather than wait for the next event.
     func setActive(_ active: Bool) {
+        guard active != isActive else { return }
+        isActive = active
         plazaView.isPaused = !active
         if active {
             refresh()
