@@ -7,7 +7,6 @@ public final class PlazaScene: SKScene {
     private var actors: [String: PlazaActor] = [:]
     private var leaving: [PlazaActor] = []
     private var slots: [String: Int] = [:]
-    private var sleeper: SKNode?
     private var tickAccum: TimeInterval = 0
     private var lastTime: TimeInterval = 0
 
@@ -37,9 +36,6 @@ public final class PlazaScene: SKScene {
             ground.texture?.filteringMode = .nearest
             addChild(ground)
             addFountain()
-        }
-        if actors.isEmpty {
-            showSleeper()
         }
     }
 
@@ -85,61 +81,6 @@ public final class PlazaScene: SKScene {
                 actor.apply(session, anchors: anchors, slot: slot)
             }
         }
-
-        if sessions.isEmpty {
-            showSleeper()
-        } else {
-            hideSleeper()
-        }
-    }
-
-    private func showSleeper() {
-        guard sleeper == nil else { return }
-        let node = SKNode()
-        node.position = anchors.sleeper
-        node.zPosition = 9
-
-        let body = SKSpriteNode(texture: PixelArt.sleeper(frame: 0))
-        body.size = CGSize(width: 22, height: 12)
-        body.position = CGPoint(x: 0, y: 6)
-        body.texture?.filteringMode = .nearest
-        body.run(.repeatForever(.animate(
-            with: (0..<2).map { PixelArt.sleeper(frame: $0) },
-            timePerFrame: 0.9,
-            resize: false,
-            restore: true
-        )))
-        node.addChild(body)
-
-        for index in 0..<2 {
-            let z = SKSpriteNode(texture: PixelArt.sleepZ())
-            z.size = CGSize(width: 6, height: 6)
-            z.position = CGPoint(x: -4, y: 12)
-            z.alpha = 0
-            z.texture?.filteringMode = .nearest
-            z.run(.repeatForever(.sequence([
-                .wait(forDuration: Double(index) * 1.1),
-                .group([
-                    .sequence([.fadeAlpha(to: 0.85, duration: 0.5), .fadeOut(withDuration: 1.1)]),
-                    .moveBy(x: 5, y: 9, duration: 1.6),
-                ]),
-                .moveBy(x: -5, y: -9, duration: 0),
-                .wait(forDuration: 2.2 - Double(index) * 1.1),
-            ])))
-            node.addChild(z)
-        }
-
-        addChild(node)
-        sleeper = node
-    }
-
-    private func hideSleeper() {
-        guard let sleeper else { return }
-        self.sleeper = nil
-        sleeper.run(.sequence([
-            .fadeOut(withDuration: 0.3),
-            .removeFromParent(),
-        ]))
     }
 
     private func slot(for id: String) -> Int {

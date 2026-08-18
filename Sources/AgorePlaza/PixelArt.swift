@@ -107,7 +107,7 @@ enum PixelArt {
     private enum TextureKey: Hashable {
         case background(PlazaLayout)
         case fountain(phase: Int)
-        case sleeper(phase: Int)
+        case sleeper(skin: UInt32, hair: UInt32, tunic: UInt32, phase: Int)
         case sleepZ
         case bubble
         case character(skin: UInt32, hair: UInt32, tunic: UInt32, kind: ActivityKind, phase: Int, small: Bool)
@@ -181,17 +181,23 @@ enum PixelArt {
         return canvas.texture()
     }
 
-    /// The plaza's caretaker: shown napping while no coding agent is awake.
-    static func sleeper(frame: Int) -> SKTexture {
-        let breath = phase(frame, over: 2)
-        return cached(.sleeper(phase: breath)) { buildSleeper(breath) }
+    static let sleeperWidth = 22
+    static let sleeperHeight = 12
+    static let sleeperFrames = 2
+
+    /// A napping agent, drawn in the same colours as its standing sprite so the person
+    /// who lay down is still recognisable.
+    static func sleeper(hash: Int, frame: Int) -> SKTexture {
+        let skin = Palette.skin(hash)
+        let hair = Palette.hair(hash)
+        let tunic = Palette.tunic(hash)
+        let breath = phase(frame, over: sleeperFrames)
+        let key = TextureKey.sleeper(skin: skin, hair: hair, tunic: tunic, phase: breath)
+        return cached(key) { buildSleeper(skin: skin, hair: hair, tunic: tunic, breath: breath) }
     }
 
-    private static func buildSleeper(_ breath: Int) -> SKTexture {
-        var canvas = PixelCanvas(width: 22, height: 12, fill: Palette.clear)
-        let skin = Palette.skin(3)
-        let hair = Palette.hair(3)
-        let tunic = Palette.tunic(3)
+    private static func buildSleeper(skin: UInt32, hair: UInt32, tunic: UInt32, breath: Int) -> SKTexture {
+        var canvas = PixelCanvas(width: sleeperWidth, height: sleeperHeight, fill: Palette.clear)
         canvas.fill(1, 0, 20, 2, Palette.stoneDark)
         canvas.fill(13, 2, 7, 3, Palette.ink)
         canvas.fill(7, 2, 8, 5 + breath, tunic)

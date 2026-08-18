@@ -13,6 +13,8 @@ final class PlazaActor {
     private var frame = 0
     private var target: CGPoint
     private var isLeaving = false
+    private let nap: SKNode
+    private var isSleeping = false
 
     init(session: AgentSession, position: CGPoint) {
         self.id = session.id
@@ -24,6 +26,9 @@ final class PlazaActor {
         let texture = PixelArt.character(hash: hashValue, kind: session.kind, frame: 0, small: session.isSubagent)
         node = SKSpriteNode(texture: texture)
         node.texture?.filteringMode = .nearest
+        // Blanking the texture is how the standing pose gets out of the sleeper's way,
+        // and a nil-textured sprite falls back to drawing this colour.
+        node.color = .clear
         node.size = session.isSubagent ? CGSize(width: 12, height: 16) : CGSize(width: 16, height: 20)
         node.position = position
         node.alpha = restingAlpha
@@ -50,6 +55,54 @@ final class PlazaActor {
             .moveBy(x: 0, y: -1, duration: 0.7),
         ])))
         node.addChild(bubble)
+
+        nap = Self.makeNap(hash: hashValue, small: session.isSubagent, feetY: -node.size.height / 2)
+        nap.isHidden = true
+        node.addChild(nap)
+    }
+
+    /// The lying sprite is a sibling of the standing one rather than a swapped texture:
+    /// the node's own position is what the walk actions steer, so the body has to lie
+    /// down around it instead of moving it down onto the ground.
+    private static func makeNap(hash: Int, small: Bool, feetY: CGFloat) -> SKNode {
+        let root = SKNode()
+        let scale: CGFloat = small ? 0.75 : 1
+        let width = CGFloat(PixelArt.sleeperWidth) * scale
+        let height = CGFloat(PixelArt.sleeperHeight) * scale
+        root.position = CGPoint(x: 0, y: feetY + height / 2)
+        root.zPosition = 1
+
+        let body = SKSpriteNode(texture: PixelArt.sleeper(hash: hash, frame: 0))
+        body.size = CGSize(width: width, height: height)
+        body.texture?.filteringMode = .nearest
+        body.run(.repeatForever(.animate(
+            with: (0..<PixelArt.sleeperFrames).map { PixelArt.sleeper(hash: hash, frame: $0) },
+            timePerFrame: 0.9,
+            resize: false,
+            restore: true
+        )))
+        root.addChild(body)
+
+        // The head lies at the left end of the sprite, so the Z's rise from there.
+        let headX = -width / 2 + 5 * scale
+        for index in 0..<2 {
+            let z = SKSpriteNode(texture: PixelArt.sleepZ())
+            z.size = CGSize(width: 6, height: 6)
+            z.position = CGPoint(x: headX, y: height / 2)
+            z.alpha = 0
+            z.texture?.filteringMode = .nearest
+            z.run(.repeatForever(.sequence([
+                .wait(forDuration: Double(index) * 1.1),
+                .group([
+                    .sequence([.fadeAlpha(to: 0.85, duration: 0.5), .fadeOut(withDuration: 1.1)]),
+                    .moveBy(x: 5, y: 9, duration: 1.6),
+                ]),
+                .moveBy(x: -5, y: -9, duration: 0),
+                .wait(forDuration: 2.2 - Double(index) * 1.1),
+            ])))
+            root.addChild(z)
+        }
+        return root
     }
 
     func apply(_ session: AgentSession, anchors: PlazaAnchors, slot: Int) {
@@ -72,6 +125,7 @@ final class PlazaActor {
             let duration = min(2.8, TimeInterval(distance / 40))
             node.run(.move(to: target, duration: duration), withKey: "walk")
         }
+        setSleeping(wantsSleep)
     }
 
     /// Leaving is losing your place on the roster, not going quiet: the plaza calls this
@@ -79,6 +133,7 @@ final class PlazaActor {
     func leave(anchors: PlazaAnchors, completion: @escaping () -> Void) {
         guard !isLeaving else { return }
         isLeaving = true
+        setSleeping(false)
         node.removeAction(forKey: "walk")
         node.run(.sequence([
             .move(to: anchors.exit(near: node.position), duration: 1.2),
@@ -89,21 +144,43 @@ final class PlazaActor {
         }
     }
 
-    func tick(anchors: PlazaAnchors) {
-        frame = (frame + 1) % PixelArt.characterFrames
+    /// An idle agent only lies down once it has reached its bench: sleeping mid-stride
+    /// would look like it fainted on the way.
+    private var wantsSleep: Bool {
+        kind == .idle && !isLeaving && node.action(forKey: "walk") == nil
+    }
+
+    /// The standing sprite is blanked rather than hidden, because hiding the node would
+    /// take the name label and the Z's down with it.
+    private func setSleeping(_ sleeping: Bool) {
+        guard sleeping != isSleeping else { return }
+        isSleeping = sleeping
+        nap.isHidden = !sleeping
+        node.texture = sleeping ? nil : standingTexture
+    }
+
+    private var standingTexture: SKTexture {
         let moving = node.action(forKey: "walk") != nil || isLeaving
             || kind == .running || kind == .thinking
-        // The idle sprite carries the walk cycle, so a resting agent borrows the waiting
-        // pose instead: standing and breathing rather than marching on the spot.
+        // The idle sprite carries the walk cycle, so an agent on its way to bed borrows
+        // the waiting pose instead: standing and breathing rather than marching on the spot.
         let visualKind: ActivityKind = kind == .idle ? (moving ? .idle : .waiting) : kind
-        let texture = PixelArt.character(
+        return PixelArt.character(
             hash: hashValue,
             kind: visualKind,
             frame: frame,
             small: isSubagent
         )
-        if node.texture !== texture {
-            node.texture = texture
+    }
+
+    func tick(anchors: PlazaAnchors) {
+        frame = (frame + 1) % PixelArt.characterFrames
+        setSleeping(wantsSleep)
+        if !isSleeping {
+            let texture = standingTexture
+            if node.texture !== texture {
+                node.texture = texture
+            }
         }
         if kind == .running || kind == .thinking, !isLeaving, node.action(forKey: "walk") == nil {
             let wander = CGPoint(
@@ -120,7 +197,6 @@ struct PlazaAnchors {
     let benches: [CGPoint]
     let strolls: [CGPoint]
     let exits: [CGPoint]
-    let sleeper: CGPoint
 
     init(layout: PlazaLayout) {
         self.layout = layout
@@ -134,7 +210,6 @@ struct PlazaAnchors {
                 CGPoint(x: 8, y: restY),
                 CGPoint(x: CGFloat(layout.worldWidth) - 8, y: restY),
             ]
-            sleeper = CGPoint(x: 138, y: CGFloat(layout.groundY))
         case .courtyard:
             // Keep the first arrivals around the fountain, well inside the frame.
             benches = [
@@ -163,7 +238,6 @@ struct PlazaAnchors {
                 CGPoint(x: 24, y: 168),
                 CGPoint(x: 216, y: 168),
             ]
-            sleeper = CGPoint(x: 88, y: 72)
         }
     }
 
