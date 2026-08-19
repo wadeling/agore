@@ -1,10 +1,16 @@
 import AppKit
+import AgoreCore
 
 enum MainMenu {
+    /// The style submenu is rebuilt every time it opens, because the same choice is also
+    /// offered from the status item and whichever menu is opened second has to agree.
+    @MainActor private static let styleMenuDelegate = StyleMenuDelegate()
+
     static func make() -> NSMenu {
         let menu = NSMenu()
         menu.addItem(appItem())
         menu.addItem(editItem())
+        menu.addItem(viewItem())
         return menu
     }
 
@@ -38,11 +44,50 @@ enum MainMenu {
         item.title = "Edit"
         return item
     }
+
+    private static func viewItem() -> NSMenuItem {
+        let style = NSMenu(title: "Style")
+        style.delegate = styleMenuDelegate
+        let styleItem = NSMenuItem(title: "Style", action: nil, keyEquivalent: "")
+        styleItem.submenu = style
+
+        let view = NSMenu()
+        view.addItem(styleItem)
+        let item = NSMenuItem()
+        item.submenu = view
+        item.title = "View"
+        return item
+    }
+}
+
+@MainActor
+private final class StyleMenuDelegate: NSObject, NSMenuDelegate {
+    func menuNeedsUpdate(_ menu: NSMenu) {
+        menu.removeAllItems()
+        let current = PlazaTheme.current
+        for theme in PlazaTheme.allCases {
+            let item = NSMenuItem(
+                title: theme.displayName,
+                action: #selector(NSApplication.selectPlazaTheme(_:)),
+                keyEquivalent: ""
+            )
+            item.representedObject = theme.rawValue
+            item.state = theme == current ? .on : .off
+            menu.addItem(item)
+        }
+    }
 }
 
 extension NSApplication {
     @MainActor
     @objc func showPlazaWindow() {
         (delegate as? AppDelegate)?.presentPlazaWindow()
+    }
+
+    @MainActor
+    @objc func selectPlazaTheme(_ sender: NSMenuItem) {
+        guard let raw = sender.representedObject as? String,
+              let theme = PlazaTheme(rawValue: raw) else { return }
+        (delegate as? AppDelegate)?.applyTheme(theme)
     }
 }

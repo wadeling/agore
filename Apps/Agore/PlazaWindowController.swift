@@ -3,6 +3,7 @@ import AgoreCore
 
 final class PlazaWindowController: NSWindowController, NSWindowDelegate {
     private let onClose: () -> Void
+    private let content: PlazaContentViewController
 
     init(store: PresenceStore, onInstall: @escaping () -> Void, onClose: @escaping () -> Void) {
         self.onClose = onClose
@@ -14,6 +15,7 @@ final class PlazaWindowController: NSWindowController, NSWindowDelegate {
             layout: .courtyard,
             rounded: false
         )
+        self.content = content
 
         let window = NSWindow(
             contentRect: NSRect(origin: .zero, size: AgoreConstants.windowSize),
@@ -38,6 +40,10 @@ final class PlazaWindowController: NSWindowController, NSWindowDelegate {
     @available(*, unavailable)
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
+    }
+
+    func apply(theme: PlazaTheme) {
+        content.apply(theme: theme)
     }
 
     func present() {

@@ -8,37 +8,42 @@
 
 /* Begin PBXBuildFile section */
 		A000000000000000000000CA /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000C9 /* Models.swift */; };
-		A000000000000000000000CC /* ActivityMapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000CB /* ActivityMapper.swift */; };
-		A000000000000000000000CE /* HookPayload.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000CD /* HookPayload.swift */; };
-		A000000000000000000000D0 /* HookIngestServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000CF /* HookIngestServer.swift */; };
-		A000000000000000000000D2 /* HookInstaller.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000D1 /* HookInstaller.swift */; };
-		A000000000000000000000D4 /* CursorTranscriptParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000D3 /* CursorTranscriptParser.swift */; };
-		A000000000000000000000D6 /* SQLiteStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000D5 /* SQLiteStore.swift */; };
-		A000000000000000000000D8 /* PresenceStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000D7 /* PresenceStore.swift */; };
-		A000000000000000000000DA /* Protocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000D9 /* Protocol.swift */; };
-		A000000000000000000000DC /* ClientIdentity.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000DB /* ClientIdentity.swift */; };
-		A000000000000000000000DE /* PlazaClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000DD /* PlazaClient.swift */; };
-		A000000000000000000000E0 /* PixelArt.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000DF /* PixelArt.swift */; };
-		A000000000000000000000E2 /* PlazaLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000E1 /* PlazaLayout.swift */; };
-		A000000000000000000000E4 /* PlazaActor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000E3 /* PlazaActor.swift */; };
-		A000000000000000000000E6 /* PlazaScene.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000E5 /* PlazaScene.swift */; };
-		A000000000000000000000E8 /* PlazaView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000E7 /* PlazaView.swift */; };
-		A000000000000000000000EA /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000E9 /* main.swift */; };
-		A000000000000000000000EC /* MainMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000EB /* MainMenu.swift */; };
-		A000000000000000000000EE /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000ED /* AppDelegate.swift */; };
-		A000000000000000000000F0 /* StatusItemController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000EF /* StatusItemController.swift */; };
-		A000000000000000000000F2 /* PlazaWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000F1 /* PlazaWindowController.swift */; };
-		A000000000000000000000F4 /* PlazaPanelController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000F3 /* PlazaPanelController.swift */; };
-		A000000000000000000000F6 /* PlazaContentViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000F5 /* PlazaContentViewController.swift */; };
-		A000000000000000000000F8 /* MenuBarIcon.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000F7 /* MenuBarIcon.swift */; };
-		A000000000000000000000FA /* ActivityMapperTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000F9 /* ActivityMapperTests.swift */; };
-		A000000000000000000000FC /* CursorTranscriptParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000FB /* CursorTranscriptParserTests.swift */; };
-		A000000000000000000000FE /* HookInstallerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000FD /* HookInstallerTests.swift */; };
-		A00000000000000000000100 /* HookPayloadTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000FF /* HookPayloadTests.swift */; };
-		A00000000000000000000102 /* PresenceStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000101 /* PresenceStoreTests.swift */; };
-		A00000000000000000000104 /* PlazaProtocolTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000103 /* PlazaProtocolTests.swift */; };
-		A00000000000000000000106 /* agore-forward.sh in Resources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000105 /* agore-forward.sh */; };
-		A0000000000000000000010A /* sample.jsonl in Resources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000109 /* sample.jsonl */; };
+		A000000000000000000000CC /* PlazaTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000CB /* PlazaTheme.swift */; };
+		A000000000000000000000CE /* ActivityMapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000CD /* ActivityMapper.swift */; };
+		A000000000000000000000D0 /* HookPayload.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000CF /* HookPayload.swift */; };
+		A000000000000000000000D2 /* HookIngestServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000D1 /* HookIngestServer.swift */; };
+		A000000000000000000000D4 /* HookInstaller.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000D3 /* HookInstaller.swift */; };
+		A000000000000000000000D6 /* CursorTranscriptParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000D5 /* CursorTranscriptParser.swift */; };
+		A000000000000000000000D8 /* SQLiteStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000D7 /* SQLiteStore.swift */; };
+		A000000000000000000000DA /* PresenceStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000D9 /* PresenceStore.swift */; };
+		A000000000000000000000DC /* Protocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000DB /* Protocol.swift */; };
+		A000000000000000000000DE /* ClientIdentity.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000DD /* ClientIdentity.swift */; };
+		A000000000000000000000E0 /* PlazaClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000DF /* PlazaClient.swift */; };
+		A000000000000000000000E2 /* PixelArt.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000E1 /* PixelArt.swift */; };
+		A000000000000000000000E4 /* PixelArtSeaside.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000E3 /* PixelArtSeaside.swift */; };
+		A000000000000000000000E6 /* PixelArtCat.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000E5 /* PixelArtCat.swift */; };
+		A000000000000000000000E8 /* PlazaLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000E7 /* PlazaLayout.swift */; };
+		A000000000000000000000EA /* PlazaGeometry.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000E9 /* PlazaGeometry.swift */; };
+		A000000000000000000000EC /* PlazaActor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000EB /* PlazaActor.swift */; };
+		A000000000000000000000EE /* PlazaCat.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000ED /* PlazaCat.swift */; };
+		A000000000000000000000F0 /* PlazaScene.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000EF /* PlazaScene.swift */; };
+		A000000000000000000000F2 /* PlazaView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000F1 /* PlazaView.swift */; };
+		A000000000000000000000F4 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000F3 /* main.swift */; };
+		A000000000000000000000F6 /* MainMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000F5 /* MainMenu.swift */; };
+		A000000000000000000000F8 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000F7 /* AppDelegate.swift */; };
+		A000000000000000000000FA /* StatusItemController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000F9 /* StatusItemController.swift */; };
+		A000000000000000000000FC /* PlazaWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000FB /* PlazaWindowController.swift */; };
+		A000000000000000000000FE /* PlazaPanelController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000FD /* PlazaPanelController.swift */; };
+		A00000000000000000000100 /* PlazaContentViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A000000000000000000000FF /* PlazaContentViewController.swift */; };
+		A00000000000000000000102 /* MenuBarIcon.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000101 /* MenuBarIcon.swift */; };
+		A00000000000000000000104 /* ActivityMapperTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000103 /* ActivityMapperTests.swift */; };
+		A00000000000000000000106 /* CursorTranscriptParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000105 /* CursorTranscriptParserTests.swift */; };
+		A00000000000000000000108 /* HookInstallerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000107 /* HookInstallerTests.swift */; };
+		A0000000000000000000010A /* HookPayloadTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000109 /* HookPayloadTests.swift */; };
+		A0000000000000000000010C /* PresenceStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000010B /* PresenceStoreTests.swift */; };
+		A0000000000000000000010E /* PlazaProtocolTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000010D /* PlazaProtocolTests.swift */; };
+		A00000000000000000000110 /* agore-forward.sh in Resources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000010F /* agore-forward.sh */; };
+		A00000000000000000000114 /* sample.jsonl in Resources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000113 /* sample.jsonl */; };
 		A00000000000000000000030 /* SpriteKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A0000000000000000000002C /* SpriteKit.framework */; };
 		A00000000000000000000031 /* SpriteKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A0000000000000000000002C /* SpriteKit.framework */; };
 		A00000000000000000000032 /* Network.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A0000000000000000000002D /* Network.framework */; };
@@ -95,38 +100,43 @@
 		A0000000000000000000002F /* AppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppKit.framework; path = System/Library/Frameworks/AppKit.framework; sourceTree = SDKROOT; };
 		A0000000000000000000002E /* libsqlite3.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libsqlite3.tbd; path = usr/lib/libsqlite3.tbd; sourceTree = SDKROOT; };
 		A000000000000000000000C9 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
-		A000000000000000000000CB /* ActivityMapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityMapper.swift; sourceTree = "<group>"; };
-		A000000000000000000000CD /* HookPayload.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HookPayload.swift; sourceTree = "<group>"; };
-		A000000000000000000000CF /* HookIngestServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HookIngestServer.swift; sourceTree = "<group>"; };
-		A000000000000000000000D1 /* HookInstaller.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HookInstaller.swift; sourceTree = "<group>"; };
-		A000000000000000000000D3 /* CursorTranscriptParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CursorTranscriptParser.swift; sourceTree = "<group>"; };
-		A000000000000000000000D5 /* SQLiteStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SQLiteStore.swift; sourceTree = "<group>"; };
-		A000000000000000000000D7 /* PresenceStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PresenceStore.swift; sourceTree = "<group>"; };
-		A000000000000000000000D9 /* Protocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Protocol.swift; sourceTree = "<group>"; };
-		A000000000000000000000DB /* ClientIdentity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClientIdentity.swift; sourceTree = "<group>"; };
-		A000000000000000000000DD /* PlazaClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlazaClient.swift; sourceTree = "<group>"; };
-		A000000000000000000000DF /* PixelArt.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PixelArt.swift; sourceTree = "<group>"; };
-		A000000000000000000000E1 /* PlazaLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlazaLayout.swift; sourceTree = "<group>"; };
-		A000000000000000000000E3 /* PlazaActor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlazaActor.swift; sourceTree = "<group>"; };
-		A000000000000000000000E5 /* PlazaScene.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlazaScene.swift; sourceTree = "<group>"; };
-		A000000000000000000000E7 /* PlazaView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlazaView.swift; sourceTree = "<group>"; };
-		A000000000000000000000E9 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
-		A000000000000000000000EB /* MainMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainMenu.swift; sourceTree = "<group>"; };
-		A000000000000000000000ED /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
-		A000000000000000000000EF /* StatusItemController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusItemController.swift; sourceTree = "<group>"; };
-		A000000000000000000000F1 /* PlazaWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlazaWindowController.swift; sourceTree = "<group>"; };
-		A000000000000000000000F3 /* PlazaPanelController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlazaPanelController.swift; sourceTree = "<group>"; };
-		A000000000000000000000F5 /* PlazaContentViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlazaContentViewController.swift; sourceTree = "<group>"; };
-		A000000000000000000000F7 /* MenuBarIcon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarIcon.swift; sourceTree = "<group>"; };
-		A000000000000000000000F9 /* ActivityMapperTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityMapperTests.swift; sourceTree = "<group>"; };
-		A000000000000000000000FB /* CursorTranscriptParserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CursorTranscriptParserTests.swift; sourceTree = "<group>"; };
-		A000000000000000000000FD /* HookInstallerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HookInstallerTests.swift; sourceTree = "<group>"; };
-		A000000000000000000000FF /* HookPayloadTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HookPayloadTests.swift; sourceTree = "<group>"; };
-		A00000000000000000000101 /* PresenceStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PresenceStoreTests.swift; sourceTree = "<group>"; };
-		A00000000000000000000103 /* PlazaProtocolTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlazaProtocolTests.swift; sourceTree = "<group>"; };
-		A00000000000000000000107 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		A00000000000000000000105 /* agore-forward.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = "agore-forward.sh"; sourceTree = "<group>"; };
-		A00000000000000000000109 /* sample.jsonl */ = {isa = PBXFileReference; lastKnownFileType = text; path = sample.jsonl; sourceTree = "<group>"; };
+		A000000000000000000000CB /* PlazaTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlazaTheme.swift; sourceTree = "<group>"; };
+		A000000000000000000000CD /* ActivityMapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityMapper.swift; sourceTree = "<group>"; };
+		A000000000000000000000CF /* HookPayload.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HookPayload.swift; sourceTree = "<group>"; };
+		A000000000000000000000D1 /* HookIngestServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HookIngestServer.swift; sourceTree = "<group>"; };
+		A000000000000000000000D3 /* HookInstaller.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HookInstaller.swift; sourceTree = "<group>"; };
+		A000000000000000000000D5 /* CursorTranscriptParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CursorTranscriptParser.swift; sourceTree = "<group>"; };
+		A000000000000000000000D7 /* SQLiteStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SQLiteStore.swift; sourceTree = "<group>"; };
+		A000000000000000000000D9 /* PresenceStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PresenceStore.swift; sourceTree = "<group>"; };
+		A000000000000000000000DB /* Protocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Protocol.swift; sourceTree = "<group>"; };
+		A000000000000000000000DD /* ClientIdentity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClientIdentity.swift; sourceTree = "<group>"; };
+		A000000000000000000000DF /* PlazaClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlazaClient.swift; sourceTree = "<group>"; };
+		A000000000000000000000E1 /* PixelArt.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PixelArt.swift; sourceTree = "<group>"; };
+		A000000000000000000000E3 /* PixelArtSeaside.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PixelArtSeaside.swift; sourceTree = "<group>"; };
+		A000000000000000000000E5 /* PixelArtCat.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PixelArtCat.swift; sourceTree = "<group>"; };
+		A000000000000000000000E7 /* PlazaLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlazaLayout.swift; sourceTree = "<group>"; };
+		A000000000000000000000E9 /* PlazaGeometry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlazaGeometry.swift; sourceTree = "<group>"; };
+		A000000000000000000000EB /* PlazaActor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlazaActor.swift; sourceTree = "<group>"; };
+		A000000000000000000000ED /* PlazaCat.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlazaCat.swift; sourceTree = "<group>"; };
+		A000000000000000000000EF /* PlazaScene.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlazaScene.swift; sourceTree = "<group>"; };
+		A000000000000000000000F1 /* PlazaView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlazaView.swift; sourceTree = "<group>"; };
+		A000000000000000000000F3 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
+		A000000000000000000000F5 /* MainMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainMenu.swift; sourceTree = "<group>"; };
+		A000000000000000000000F7 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		A000000000000000000000F9 /* StatusItemController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusItemController.swift; sourceTree = "<group>"; };
+		A000000000000000000000FB /* PlazaWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlazaWindowController.swift; sourceTree = "<group>"; };
+		A000000000000000000000FD /* PlazaPanelController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlazaPanelController.swift; sourceTree = "<group>"; };
+		A000000000000000000000FF /* PlazaContentViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlazaContentViewController.swift; sourceTree = "<group>"; };
+		A00000000000000000000101 /* MenuBarIcon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarIcon.swift; sourceTree = "<group>"; };
+		A00000000000000000000103 /* ActivityMapperTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityMapperTests.swift; sourceTree = "<group>"; };
+		A00000000000000000000105 /* CursorTranscriptParserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CursorTranscriptParserTests.swift; sourceTree = "<group>"; };
+		A00000000000000000000107 /* HookInstallerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HookInstallerTests.swift; sourceTree = "<group>"; };
+		A00000000000000000000109 /* HookPayloadTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HookPayloadTests.swift; sourceTree = "<group>"; };
+		A0000000000000000000010B /* PresenceStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PresenceStoreTests.swift; sourceTree = "<group>"; };
+		A0000000000000000000010D /* PlazaProtocolTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlazaProtocolTests.swift; sourceTree = "<group>"; };
+		A00000000000000000000111 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		A0000000000000000000010F /* agore-forward.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = "agore-forward.sh"; sourceTree = "<group>"; };
+		A00000000000000000000113 /* sample.jsonl */ = {isa = PBXFileReference; lastKnownFileType = text; path = sample.jsonl; sourceTree = "<group>"; };
 		A0000000000000000000004B /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -219,15 +229,15 @@
 		A0000000000000000000000C /* Agore */ = {
 			isa = PBXGroup;
 			children = (
-				A000000000000000000000E9 /* main.swift */,
-				A000000000000000000000EB /* MainMenu.swift */,
-				A000000000000000000000ED /* AppDelegate.swift */,
-				A000000000000000000000EF /* StatusItemController.swift */,
-				A000000000000000000000F1 /* PlazaWindowController.swift */,
-				A000000000000000000000F3 /* PlazaPanelController.swift */,
-				A000000000000000000000F5 /* PlazaContentViewController.swift */,
-				A000000000000000000000F7 /* MenuBarIcon.swift */,
-				A00000000000000000000107 /* Info.plist */,
+				A000000000000000000000F3 /* main.swift */,
+				A000000000000000000000F5 /* MainMenu.swift */,
+				A000000000000000000000F7 /* AppDelegate.swift */,
+				A000000000000000000000F9 /* StatusItemController.swift */,
+				A000000000000000000000FB /* PlazaWindowController.swift */,
+				A000000000000000000000FD /* PlazaPanelController.swift */,
+				A000000000000000000000FF /* PlazaContentViewController.swift */,
+				A00000000000000000000101 /* MenuBarIcon.swift */,
+				A00000000000000000000111 /* Info.plist */,
 				A0000000000000000000004B /* Assets.xcassets */,
 			);
 			path = Agore;
@@ -246,7 +256,8 @@
 			isa = PBXGroup;
 			children = (
 				A000000000000000000000C9 /* Models.swift */,
-				A000000000000000000000CB /* ActivityMapper.swift */,
+				A000000000000000000000CB /* PlazaTheme.swift */,
+				A000000000000000000000CD /* ActivityMapper.swift */,
 				A0000000000000000000000F /* Cursor */,
 				A00000000000000000000010 /* Store */,
 				A00000000000000000000011 /* Plaza */,
@@ -257,10 +268,10 @@
 		A0000000000000000000000F /* Cursor */ = {
 			isa = PBXGroup;
 			children = (
-				A000000000000000000000CD /* HookPayload.swift */,
-				A000000000000000000000CF /* HookIngestServer.swift */,
-				A000000000000000000000D1 /* HookInstaller.swift */,
-				A000000000000000000000D3 /* CursorTranscriptParser.swift */,
+				A000000000000000000000CF /* HookPayload.swift */,
+				A000000000000000000000D1 /* HookIngestServer.swift */,
+				A000000000000000000000D3 /* HookInstaller.swift */,
+				A000000000000000000000D5 /* CursorTranscriptParser.swift */,
 			);
 			path = Cursor;
 			sourceTree = "<group>";
@@ -268,8 +279,8 @@
 		A00000000000000000000010 /* Store */ = {
 			isa = PBXGroup;
 			children = (
-				A000000000000000000000D5 /* SQLiteStore.swift */,
-				A000000000000000000000D7 /* PresenceStore.swift */,
+				A000000000000000000000D7 /* SQLiteStore.swift */,
+				A000000000000000000000D9 /* PresenceStore.swift */,
 			);
 			path = Store;
 			sourceTree = "<group>";
@@ -277,9 +288,9 @@
 		A00000000000000000000011 /* Plaza */ = {
 			isa = PBXGroup;
 			children = (
-				A000000000000000000000D9 /* Protocol.swift */,
-				A000000000000000000000DB /* ClientIdentity.swift */,
-				A000000000000000000000DD /* PlazaClient.swift */,
+				A000000000000000000000DB /* Protocol.swift */,
+				A000000000000000000000DD /* ClientIdentity.swift */,
+				A000000000000000000000DF /* PlazaClient.swift */,
 			);
 			path = Plaza;
 			sourceTree = "<group>";
@@ -287,11 +298,15 @@
 		A00000000000000000000012 /* AgorePlaza */ = {
 			isa = PBXGroup;
 			children = (
-				A000000000000000000000DF /* PixelArt.swift */,
-				A000000000000000000000E1 /* PlazaLayout.swift */,
-				A000000000000000000000E3 /* PlazaActor.swift */,
-				A000000000000000000000E5 /* PlazaScene.swift */,
-				A000000000000000000000E7 /* PlazaView.swift */,
+				A000000000000000000000E1 /* PixelArt.swift */,
+				A000000000000000000000E3 /* PixelArtSeaside.swift */,
+				A000000000000000000000E5 /* PixelArtCat.swift */,
+				A000000000000000000000E7 /* PlazaLayout.swift */,
+				A000000000000000000000E9 /* PlazaGeometry.swift */,
+				A000000000000000000000EB /* PlazaActor.swift */,
+				A000000000000000000000ED /* PlazaCat.swift */,
+				A000000000000000000000EF /* PlazaScene.swift */,
+				A000000000000000000000F1 /* PlazaView.swift */,
 			);
 			path = AgorePlaza;
 			sourceTree = "<group>";
@@ -307,7 +322,7 @@
 		A00000000000000000000014 /* hooks */ = {
 			isa = PBXGroup;
 			children = (
-				A00000000000000000000105 /* agore-forward.sh */,
+				A0000000000000000000010F /* agore-forward.sh */,
 			);
 			path = hooks;
 			sourceTree = "<group>";
@@ -323,12 +338,12 @@
 		A00000000000000000000016 /* AgoreCoreTests */ = {
 			isa = PBXGroup;
 			children = (
-				A000000000000000000000F9 /* ActivityMapperTests.swift */,
-				A000000000000000000000FB /* CursorTranscriptParserTests.swift */,
-				A000000000000000000000FD /* HookInstallerTests.swift */,
-				A000000000000000000000FF /* HookPayloadTests.swift */,
-				A00000000000000000000101 /* PresenceStoreTests.swift */,
-				A00000000000000000000103 /* PlazaProtocolTests.swift */,
+				A00000000000000000000103 /* ActivityMapperTests.swift */,
+				A00000000000000000000105 /* CursorTranscriptParserTests.swift */,
+				A00000000000000000000107 /* HookInstallerTests.swift */,
+				A00000000000000000000109 /* HookPayloadTests.swift */,
+				A0000000000000000000010B /* PresenceStoreTests.swift */,
+				A0000000000000000000010D /* PlazaProtocolTests.swift */,
 				A00000000000000000000017 /* Fixtures */,
 			);
 			path = AgoreCoreTests;
@@ -337,7 +352,7 @@
 		A00000000000000000000017 /* Fixtures */ = {
 			isa = PBXGroup;
 			children = (
-				A00000000000000000000109 /* sample.jsonl */,
+				A00000000000000000000113 /* sample.jsonl */,
 			);
 			path = Fixtures;
 			sourceTree = "<group>";
@@ -451,7 +466,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				A00000000000000000000106 /* agore-forward.sh in Resources */,
+				A00000000000000000000110 /* agore-forward.sh in Resources */,
 				A0000000000000000000004C /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -460,7 +475,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				A0000000000000000000010A /* sample.jsonl in Resources */,
+				A00000000000000000000114 /* sample.jsonl in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -472,16 +487,17 @@
 			buildActionMask = 2147483647;
 			files = (
 				A000000000000000000000CA /* Models.swift in Sources */,
-				A000000000000000000000CC /* ActivityMapper.swift in Sources */,
-				A000000000000000000000CE /* HookPayload.swift in Sources */,
-				A000000000000000000000D0 /* HookIngestServer.swift in Sources */,
-				A000000000000000000000D2 /* HookInstaller.swift in Sources */,
-				A000000000000000000000D4 /* CursorTranscriptParser.swift in Sources */,
-				A000000000000000000000D6 /* SQLiteStore.swift in Sources */,
-				A000000000000000000000D8 /* PresenceStore.swift in Sources */,
-				A000000000000000000000DA /* Protocol.swift in Sources */,
-				A000000000000000000000DC /* ClientIdentity.swift in Sources */,
-				A000000000000000000000DE /* PlazaClient.swift in Sources */,
+				A000000000000000000000CC /* PlazaTheme.swift in Sources */,
+				A000000000000000000000CE /* ActivityMapper.swift in Sources */,
+				A000000000000000000000D0 /* HookPayload.swift in Sources */,
+				A000000000000000000000D2 /* HookIngestServer.swift in Sources */,
+				A000000000000000000000D4 /* HookInstaller.swift in Sources */,
+				A000000000000000000000D6 /* CursorTranscriptParser.swift in Sources */,
+				A000000000000000000000D8 /* SQLiteStore.swift in Sources */,
+				A000000000000000000000DA /* PresenceStore.swift in Sources */,
+				A000000000000000000000DC /* Protocol.swift in Sources */,
+				A000000000000000000000DE /* ClientIdentity.swift in Sources */,
+				A000000000000000000000E0 /* PlazaClient.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -489,11 +505,15 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				A000000000000000000000E0 /* PixelArt.swift in Sources */,
-				A000000000000000000000E2 /* PlazaLayout.swift in Sources */,
-				A000000000000000000000E4 /* PlazaActor.swift in Sources */,
-				A000000000000000000000E6 /* PlazaScene.swift in Sources */,
-				A000000000000000000000E8 /* PlazaView.swift in Sources */,
+				A000000000000000000000E2 /* PixelArt.swift in Sources */,
+				A000000000000000000000E4 /* PixelArtSeaside.swift in Sources */,
+				A000000000000000000000E6 /* PixelArtCat.swift in Sources */,
+				A000000000000000000000E8 /* PlazaLayout.swift in Sources */,
+				A000000000000000000000EA /* PlazaGeometry.swift in Sources */,
+				A000000000000000000000EC /* PlazaActor.swift in Sources */,
+				A000000000000000000000EE /* PlazaCat.swift in Sources */,
+				A000000000000000000000F0 /* PlazaScene.swift in Sources */,
+				A000000000000000000000F2 /* PlazaView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -501,14 +521,14 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				A000000000000000000000EA /* main.swift in Sources */,
-				A000000000000000000000EC /* MainMenu.swift in Sources */,
-				A000000000000000000000EE /* AppDelegate.swift in Sources */,
-				A000000000000000000000F0 /* StatusItemController.swift in Sources */,
-				A000000000000000000000F2 /* PlazaWindowController.swift in Sources */,
-				A000000000000000000000F4 /* PlazaPanelController.swift in Sources */,
-				A000000000000000000000F6 /* PlazaContentViewController.swift in Sources */,
-				A000000000000000000000F8 /* MenuBarIcon.swift in Sources */,
+				A000000000000000000000F4 /* main.swift in Sources */,
+				A000000000000000000000F6 /* MainMenu.swift in Sources */,
+				A000000000000000000000F8 /* AppDelegate.swift in Sources */,
+				A000000000000000000000FA /* StatusItemController.swift in Sources */,
+				A000000000000000000000FC /* PlazaWindowController.swift in Sources */,
+				A000000000000000000000FE /* PlazaPanelController.swift in Sources */,
+				A00000000000000000000100 /* PlazaContentViewController.swift in Sources */,
+				A00000000000000000000102 /* MenuBarIcon.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -516,12 +536,12 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				A000000000000000000000FA /* ActivityMapperTests.swift in Sources */,
-				A000000000000000000000FC /* CursorTranscriptParserTests.swift in Sources */,
-				A000000000000000000000FE /* HookInstallerTests.swift in Sources */,
-				A00000000000000000000100 /* HookPayloadTests.swift in Sources */,
-				A00000000000000000000102 /* PresenceStoreTests.swift in Sources */,
-				A00000000000000000000104 /* PlazaProtocolTests.swift in Sources */,
+				A00000000000000000000104 /* ActivityMapperTests.swift in Sources */,
+				A00000000000000000000106 /* CursorTranscriptParserTests.swift in Sources */,
+				A00000000000000000000108 /* HookInstallerTests.swift in Sources */,
+				A0000000000000000000010A /* HookPayloadTests.swift in Sources */,
+				A0000000000000000000010C /* PresenceStoreTests.swift in Sources */,
+				A0000000000000000000010E /* PlazaProtocolTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

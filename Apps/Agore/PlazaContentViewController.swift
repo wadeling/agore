@@ -134,6 +134,11 @@ final class PlazaContentViewController: NSViewController {
         setActive(true)
     }
 
+    func apply(theme: PlazaTheme) {
+        plazaView.apply(theme: theme)
+        refresh()
+    }
+
     /// A scene left paused renders nothing that was added while it slept, so becoming
     /// active has to redraw from the store rather than wait for the next event.
     func setActive(_ active: Bool) {

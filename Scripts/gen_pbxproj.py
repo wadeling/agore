@@ -90,6 +90,7 @@ ids = {name: nid(i + 1) for i, name in enumerate([
 
 core_files = [
     "Sources/AgoreCore/Models.swift",
+    "Sources/AgoreCore/PlazaTheme.swift",
     "Sources/AgoreCore/ActivityMapper.swift",
     "Sources/AgoreCore/Cursor/HookPayload.swift",
     "Sources/AgoreCore/Cursor/HookIngestServer.swift",
@@ -103,8 +104,12 @@ core_files = [
 ]
 plaza_files = [
     "Sources/AgorePlaza/PixelArt.swift",
+    "Sources/AgorePlaza/PixelArtSeaside.swift",
+    "Sources/AgorePlaza/PixelArtCat.swift",
     "Sources/AgorePlaza/PlazaLayout.swift",
+    "Sources/AgorePlaza/PlazaGeometry.swift",
     "Sources/AgorePlaza/PlazaActor.swift",
+    "Sources/AgorePlaza/PlazaCat.swift",
     "Sources/AgorePlaza/PlazaScene.swift",
     "Sources/AgorePlaza/PlazaView.swift",
 ]
@@ -337,8 +342,8 @@ o("\t\t};")
 o(f"\t\t{ids['GROUP_CORE']} /* AgoreCore */ = {{")
 o("\t\t\tisa = PBXGroup;")
 o("\t\t\tchildren = (")
-o(f"\t\t\t\t{file_ids['Sources/AgoreCore/Models.swift']} /* Models.swift */,")
-o(f"\t\t\t\t{file_ids['Sources/AgoreCore/ActivityMapper.swift']} /* ActivityMapper.swift */,")
+for path in [p for p in core_files if p.count("/") == 2]:
+    o(f"\t\t\t\t{file_ids[path]} /* {Path(path).name} */,")
 o(f"\t\t\t\t{ids['GROUP_CORE_CURSOR']} /* Cursor */,")
 o(f"\t\t\t\t{ids['GROUP_CORE_STORE']} /* Store */,")
 o(f"\t\t\t\t{ids['GROUP_CORE_PLAZA']} /* Plaza */,")

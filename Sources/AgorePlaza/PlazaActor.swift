@@ -185,7 +185,7 @@ final class PlazaActor {
         if kind == .running || kind == .thinking, !isLeaving, node.action(forKey: "walk") == nil {
             let wander = CGPoint(
                 x: node.position.x + CGFloat.random(in: -26...26),
-                y: node.position.y + CGFloat.random(in: anchors.layout == .strip ? -3...3 : -18...18)
+                y: node.position.y + CGFloat.random(in: anchors.geometry.isStrip ? -3...3 : -18...18)
             )
             node.run(.move(to: anchors.walkable(wander), duration: 1.4), withKey: "walk")
         }
@@ -193,62 +193,37 @@ final class PlazaActor {
 }
 
 struct PlazaAnchors {
-    let layout: PlazaLayout
+    let geometry: PlazaGeometry
     let benches: [CGPoint]
     let strolls: [CGPoint]
     let exits: [CGPoint]
 
-    init(layout: PlazaLayout) {
-        self.layout = layout
-        switch layout {
-        case .strip:
-            benches = layout.restSpots
-            strolls = benches.map { CGPoint(x: $0.x + 10, y: $0.y - 3) }
-            exits = [
-                CGPoint(x: 8, y: benches[0].y),
-                CGPoint(x: CGFloat(layout.worldWidth) - 8, y: benches[0].y),
-            ]
-        case .courtyard:
-            // Keep the first arrivals around the fountain, well inside the frame.
-            benches = layout.restSpots
-            strolls = [
-                CGPoint(x: 100, y: 112),
-                CGPoint(x: 140, y: 112),
-                CGPoint(x: 64, y: 100),
-                CGPoint(x: 176, y: 100),
-                CGPoint(x: 108, y: 148),
-                CGPoint(x: 132, y: 148),
-                CGPoint(x: 96, y: 80),
-                CGPoint(x: 144, y: 80),
-            ]
-            exits = [
-                CGPoint(x: 24, y: 32),
-                CGPoint(x: 216, y: 32),
-                CGPoint(x: 24, y: 168),
-                CGPoint(x: 216, y: 168),
-            ]
-        }
+    init(geometry: PlazaGeometry) {
+        self.geometry = geometry
+        benches = geometry.restSpots
+        strolls = geometry.strollSpots
+        exits = geometry.exits
     }
 
     func walkable(_ point: CGPoint) -> CGPoint {
-        var x = min(max(point.x, 24), CGFloat(layout.worldWidth) - 24)
-        var y = min(max(point.y, layout.walkMinY), layout.walkMaxY)
-        if layout.fountainZoneX.contains(x), layout.fountainZoneY.contains(y) {
-            x = x < layout.fountainCenter.x
-                ? layout.fountainZoneX.lowerBound
-                : layout.fountainZoneX.upperBound
+        var x = min(max(point.x, 24), CGFloat(geometry.worldWidth) - 24)
+        let y = min(max(point.y, geometry.walkMinY), geometry.walkMaxY)
+        if geometry.centerpieceZoneX.contains(x), geometry.centerpieceZoneY.contains(y) {
+            x = x < geometry.centerpieceCenter.x
+                ? geometry.centerpieceZoneX.lowerBound
+                : geometry.centerpieceZoneX.upperBound
         }
         return CGPoint(x: x, y: y)
     }
 
     func spawn() -> CGPoint {
-        exits.randomElement() ?? CGPoint(x: 24, y: layout.walkMinY)
+        exits.randomElement() ?? CGPoint(x: 24, y: geometry.walkMinY)
     }
 
     func spot(for session: AgentSession, slot: Int) -> CGPoint {
         let lane = slot % benches.count
         let row = (slot / benches.count) % 2
-        let depth = CGFloat(row) * (layout == .strip ? -4 : 16)
+        let depth = CGFloat(row) * (geometry.isStrip ? -4 : 16)
         switch session.kind {
         case .reading, .writing, .waiting, .idle:
             return benches[lane].offsetBy(dx: 0, dy: depth)

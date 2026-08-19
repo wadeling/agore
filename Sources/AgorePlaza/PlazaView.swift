@@ -5,8 +5,8 @@ import AgoreCore
 public final class PlazaView: SKView {
     public let plazaScene: PlazaScene
 
-    public init(frame frameRect: NSRect, layout: PlazaLayout) {
-        plazaScene = PlazaScene(layout: layout)
+    public init(frame frameRect: NSRect, layout: PlazaLayout, theme: PlazaTheme = .current) {
+        plazaScene = PlazaScene(layout: layout, theme: theme)
         super.init(frame: frameRect)
         ignoresSiblingOrder = true
         allowsTransparency = layout == .strip
@@ -34,6 +34,10 @@ public final class PlazaView: SKView {
     public override func setFrameSize(_ newSize: NSSize) {
         super.setFrameSize(newSize)
         attachSceneIfNeeded()
+    }
+
+    public func apply(theme: PlazaTheme) {
+        plazaScene.apply(theme: theme)
     }
 
     public func sync(store: PresenceStore) {

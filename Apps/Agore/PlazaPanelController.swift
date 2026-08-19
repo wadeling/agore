@@ -70,6 +70,10 @@ final class PlazaPanelController: NSObject, NSWindowDelegate {
         stopClickMonitor()
     }
 
+    func apply(theme: PlazaTheme) {
+        content.apply(theme: theme)
+    }
+
     func setPinned(_ pinned: Bool) {
         isPinned = pinned
         UserDefaults.standard.set(pinned, forKey: AgoreConstants.alwaysOnTopKey)

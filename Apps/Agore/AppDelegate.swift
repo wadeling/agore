@@ -112,8 +112,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             store: store,
             onInstall: { [weak self] in self?.installHooksIfNeeded() },
             onNickname: { [weak self] name in self?.applyNickname(name) },
-            onToken: { [weak self] token in self?.applyToken(token) }
+            onToken: { [weak self] token in self?.applyToken(token) },
+            onTheme: { [weak self] theme in self?.applyTheme(theme) }
         )
+    }
+
+    /// Both surfaces share one style, so the pick has to land on the strip and the window
+    /// alike — and outlive a restart.
+    func applyTheme(_ theme: PlazaTheme) {
+        guard theme != PlazaTheme.current else { return }
+        PlazaTheme.current = theme
+        statusItem?.apply(theme: theme)
+        windowController?.apply(theme: theme)
     }
 
     private func applyNickname(_ name: String) {

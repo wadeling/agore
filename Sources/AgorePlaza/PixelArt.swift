@@ -169,6 +169,34 @@ struct PixelCanvas {
         }
     }
 
+    /// Trace a one-pixel border around everything already drawn. Sprites with a lot of
+    /// curves — a cat far more than a person — read as a shape rather than a smudge with
+    /// this on, and outlining afterwards is far less fiddly than placing the edge by hand.
+    mutating func outline(_ color: UInt32) {
+        var edges: [Int] = []
+        for y in 0..<height {
+            for x in 0..<width {
+                guard pixels[y * width + x] >> 24 == 0 else { continue }
+                var touches = false
+                for (dx, dy) in [(1, 0), (-1, 0), (0, 1), (0, -1)] {
+                    let nx = x + dx
+                    let ny = y + dy
+                    guard nx >= 0, ny >= 0, nx < width, ny < height else { continue }
+                    if pixels[ny * width + nx] >> 24 > 0 {
+                        touches = true
+                        break
+                    }
+                }
+                if touches {
+                    edges.append(y * width + x)
+                }
+            }
+        }
+        for index in edges {
+            pixels[index] = color
+        }
+    }
+
     func texture() -> SKTexture {
         let data = pixels.withUnsafeBufferPointer { Data(buffer: $0) }
         let texture = SKTexture(data: data, size: CGSize(width: width, height: height))
@@ -181,68 +209,73 @@ enum PixelArt {
     static let characterWidth = 16
     static let characterHeight = 20
     static let characterFrames = 6
-    static let fountainWidth = 28
-    static let fountainHeight = 18
+    static let centerpieceWidth = 28
+    static let centerpieceHeight = 18
+    static let centerpieceFrames = 3
 
     /// Every sprite is a pure function of a handful of inputs, so the whole plaza needs
     /// only a few dozen textures. Building them per frame instead would hand SpriteKit a
     /// new GPU allocation several times a second per actor, which never comes back.
     private static var cache: [TextureKey: SKTexture] = [:]
 
-    private enum TextureKey: Hashable {
-        case background(PlazaLayout, PlazaPeriod)
-        case fountain(phase: Int)
+    enum TextureKey: Hashable {
+        case background(PlazaGeometry, PlazaPeriod)
+        case centerpiece(theme: PlazaTheme, phase: Int)
         case sleeper(skin: UInt32, hair: UInt32, tunic: UInt32, phase: Int)
         case sleepZ
         case bubble
-        case bird(phase: Int)
-        case leaf
+        case bird(theme: PlazaTheme, phase: Int)
+        case leaf(theme: PlazaTheme)
+        case cat(variant: Int, pose: CatPose, phase: Int)
         case character(skin: UInt32, hair: UInt32, tunic: UInt32, kind: ActivityKind, phase: Int, small: Bool)
     }
 
-    private static func cached(_ key: TextureKey, _ build: () -> SKTexture) -> SKTexture {
+    static func cached(_ key: TextureKey, _ build: () -> SKTexture) -> SKTexture {
         if let texture = cache[key] { return texture }
         let texture = build()
         cache[key] = texture
         return texture
     }
 
-    static func plazaBackground(_ layout: PlazaLayout, period: PlazaPeriod = .current()) -> SKTexture {
-        cached(.background(layout, period)) { buildPlazaBackground(layout, period: period) }
+    static func plazaBackground(_ geometry: PlazaGeometry, period: PlazaPeriod = .current()) -> SKTexture {
+        cached(.background(geometry, period)) {
+            switch geometry.theme {
+            case .agora: return buildAgoraBackground(geometry, period: period)
+            case .seaside: return buildSeasideBackground(geometry, period: period)
+            }
+        }
     }
 
-    private static func buildPlazaBackground(_ layout: PlazaLayout, period: PlazaPeriod) -> SKTexture {
-        let width = layout.worldWidth
-        let height = layout.worldHeight
-        var canvas = PixelCanvas(width: width, height: height, fill: Palette.stone)
-        drawSky(&canvas, layout: layout, period: period)
-        drawHills(&canvas, layout: layout)
-        drawPaving(&canvas, layout: layout)
-        drawFountainMosaic(&canvas, layout: layout)
-        for tree in layout.oliveTrees {
+    private static func buildAgoraBackground(_ geometry: PlazaGeometry, period: PlazaPeriod) -> SKTexture {
+        var canvas = PixelCanvas(width: geometry.worldWidth, height: geometry.worldHeight, fill: Palette.stone)
+        drawSky(&canvas, geometry: geometry, period: period)
+        drawHills(&canvas, geometry: geometry)
+        drawPaving(&canvas, geometry: geometry)
+        drawFountainMosaic(&canvas, geometry: geometry)
+        for tree in geometry.trees {
             drawOliveTree(&canvas, tree: tree)
         }
-        drawBenches(&canvas, layout: layout)
-        applyFloorWash(&canvas, layout: layout, period: period)
-        drawStoa(&canvas, layout: layout, period: period)
+        drawBenches(&canvas, geometry: geometry)
+        applyFloorWash(&canvas, geometry: geometry, period: period)
+        drawStoa(&canvas, geometry: geometry, period: period)
         return canvas.texture()
     }
 
-    private static func applyFloorWash(_ canvas: inout PixelCanvas, layout: PlazaLayout, period: PlazaPeriod) {
+    static func applyFloorWash(_ canvas: inout PixelCanvas, geometry: PlazaGeometry, period: PlazaPeriod) {
         switch period {
         case .day:
             return
         case .dusk:
-            canvas.multiply(Palette.rgba(0xE8C8B0, 255), yRange: 0..<layout.horizonY)
+            canvas.multiply(Palette.rgba(0xE8C8B0, 255), yRange: 0..<geometry.horizonY)
         case .night:
-            canvas.multiply(Palette.rgba(0x8898B8, 255), yRange: 0..<layout.horizonY)
+            canvas.multiply(Palette.rgba(0x8898B8, 255), yRange: 0..<geometry.horizonY)
         }
     }
 
-    private static func drawSky(_ canvas: inout PixelCanvas, layout: PlazaLayout, period: PlazaPeriod) {
-        let width = layout.worldWidth
-        let height = layout.worldHeight
-        let horizon = layout.horizonY
+    private static func drawSky(_ canvas: inout PixelCanvas, geometry: PlazaGeometry, period: PlazaPeriod) {
+        let width = geometry.worldWidth
+        let height = geometry.worldHeight
+        let horizon = geometry.horizonY
         let sky: UInt32
         let glow: UInt32
         switch period {
@@ -259,40 +292,46 @@ enum PixelArt {
         canvas.fill(0, horizon, width, max(0, height - horizon), sky)
         let band = min(period == .day ? 3 : 6, max(0, height - horizon))
         canvas.fill(0, horizon, width, band, glow)
-        if period == .dusk, layout == .courtyard {
+        if period == .dusk, !geometry.isStrip {
             canvas.disk(width / 4, horizon + 1, 3, Palette.lantern)
             canvas.disk(width / 4, horizon + 1, 1, Palette.stoneLight)
         }
         if period == .night {
-            var seed = width &* 1103515245 &+ height
-            let starCount = layout == .strip ? 7 : 18
-            for _ in 0..<starCount {
-                seed = seed &* 1103515245 &+ 12345
-                let bits = seed & Int.max
-                let sx = bits % width
-                let room = max(1, height - horizon - band)
-                let sy = horizon + band + (bits / 11) % room
-                canvas.set(sx, sy, Palette.star)
-            }
-            let moonX = layout == .strip ? 28 : width - 22
+            scatterStars(&canvas, geometry: geometry, above: horizon + band, color: Palette.star)
+            let moonX = geometry.isStrip ? 28 : width - 22
             let moonY = min(height - 5, horizon + max(4, (height - horizon) / 2))
-            canvas.disk(moonX, moonY, layout == .strip ? 2 : 4, Palette.moon)
-            canvas.disk(moonX + 1, moonY + 1, layout == .strip ? 1 : 2, Palette.nightSky)
+            canvas.disk(moonX, moonY, geometry.isStrip ? 2 : 4, Palette.moon)
+            canvas.disk(moonX + 1, moonY + 1, geometry.isStrip ? 1 : 2, Palette.nightSky)
         }
     }
 
-    private static func drawHills(_ canvas: inout PixelCanvas, layout: PlazaLayout) {
-        guard layout == .courtyard else { return }
-        let horizon = layout.horizonY
+    /// Deterministic so a repainted background keeps the same night sky.
+    static func scatterStars(_ canvas: inout PixelCanvas, geometry: PlazaGeometry, above: Int, color: UInt32) {
+        let width = geometry.worldWidth
+        let height = geometry.worldHeight
+        var seed = width &* 1103515245 &+ height
+        let starCount = geometry.isStrip ? 7 : 18
+        for _ in 0..<starCount {
+            seed = seed &* 1103515245 &+ 12345
+            let bits = seed & Int.max
+            let sx = bits % width
+            let room = max(1, height - above)
+            canvas.set(sx, above + (bits / 11) % room, color)
+        }
+    }
+
+    private static func drawHills(_ canvas: inout PixelCanvas, geometry: PlazaGeometry) {
+        guard !geometry.isStrip else { return }
+        let horizon = geometry.horizonY
         canvas.disk(36, horizon + 2, 26, Palette.hillDark)
         canvas.disk(88, horizon, 20, Palette.hill)
         canvas.disk(158, horizon + 4, 28, Palette.hillDark)
         canvas.disk(210, horizon + 1, 18, Palette.hill)
     }
 
-    private static func drawPaving(_ canvas: inout PixelCanvas, layout: PlazaLayout) {
-        let width = layout.worldWidth
-        let horizon = layout.horizonY
+    private static func drawPaving(_ canvas: inout PixelCanvas, geometry: PlazaGeometry) {
+        let width = geometry.worldWidth
+        let horizon = geometry.horizonY
         var xs = [0]
         var x = 0
         var col = 0
@@ -322,20 +361,19 @@ enum PixelArt {
             canvas.fill(0, gy, width, 1, Palette.grout)
         }
         canvas.fill(0, 0, width, 2, Palette.stoneDark)
-        canvas.fill(8, layout.groundY - 2, width - 16, 3, Palette.slabTint)
+        canvas.fill(8, geometry.groundY - 2, width - 16, 3, Palette.slabTint)
     }
 
-    private static func drawFountainMosaic(_ canvas: inout PixelCanvas, layout: PlazaLayout) {
-        let cx = Int(layout.fountainCenter.x)
-        let cy = Int(layout.fountainCenter.y)
-        switch layout {
-        case .strip:
+    private static func drawFountainMosaic(_ canvas: inout PixelCanvas, geometry: PlazaGeometry) {
+        let cx = Int(geometry.centerpieceCenter.x)
+        let cy = Int(geometry.centerpieceCenter.y)
+        if geometry.isStrip {
             canvas.ellipse(cx, cy, 36, 9, Palette.mosaic)
             canvas.ellipse(cx, cy, 32, 7, Palette.stoneLight)
             canvas.ellipse(cx, cy, 26, 5, Palette.mosaicDark)
             canvas.ellipse(cx, cy, 20, 3, Palette.stone)
             drawMeander(&canvas, x: cx - 34, y: max(0, cy - 10), width: 68, color: Palette.mosaicDark)
-        case .courtyard:
+        } else {
             canvas.disk(cx, cy, 44, Palette.mosaic)
             canvas.disk(cx, cy, 40, Palette.stoneLight)
             canvas.circle(cx, cy, 38, Palette.mosaicDark)
@@ -362,18 +400,17 @@ enum PixelArt {
         }
     }
 
-    private static func drawStoa(_ canvas: inout PixelCanvas, layout: PlazaLayout, period: PlazaPeriod) {
-        let width = layout.worldWidth
-        let height = layout.worldHeight
-        let horizon = layout.horizonY
+    private static func drawStoa(_ canvas: inout PixelCanvas, geometry: PlazaGeometry, period: PlazaPeriod) {
+        let width = geometry.worldWidth
+        let height = geometry.worldHeight
+        let horizon = geometry.horizonY
         let lanterns = period == .night
-        let fountainX = Int(layout.fountainCenter.x)
-        switch layout {
-        case .strip:
+        let centerX = Int(geometry.centerpieceCenter.x)
+        if geometry.isStrip {
             canvas.fill(0, horizon, width, max(0, height - horizon - 4), Palette.stoaShade)
             let colTop = height - 5
             for x in stride(from: 14, to: width - 14, by: 28) {
-                if abs((x + 4) - fountainX) < 22 { continue }
+                if abs((x + 4) - centerX) < 22 { continue }
                 drawColumn(&canvas, x: x, baseY: horizon - 8, topY: colTop, lantern: lanterns && (x / 28) % 2 == 0)
             }
             canvas.fill(0, height - 6, width, 1, Palette.columnShadow)
@@ -385,7 +422,7 @@ enum PixelArt {
             drawPediment(&canvas, centerX: width / 2, apexY: height - 1, rise: 5, halfWidth: 26)
             drawGate(&canvas, x: 1, baseY: 10, topY: height - 3)
             drawGate(&canvas, x: width - 11, baseY: 10, topY: height - 3)
-        case .courtyard:
+        } else {
             canvas.fill(0, horizon - 4, width, max(0, height - horizon - 10), Palette.stoaShade)
             let colTop = height - 18
             for x in stride(from: 12, to: width - 12, by: 24) {
@@ -450,7 +487,7 @@ enum PixelArt {
         canvas.fill(x, baseY + 5 + shaft, 10, 2, Palette.roof)
     }
 
-    private static func drawOliveTree(_ canvas: inout PixelCanvas, tree: OliveTreeSpec) {
+    private static func drawOliveTree(_ canvas: inout PixelCanvas, tree: TreeSpec) {
         let size = min(max(tree.size, 0), 2)
         let canopyR = [3, 5, 7][size]
         let trunkH = [3, 5, 7][size]
@@ -468,9 +505,20 @@ enum PixelArt {
         }
     }
 
-    private static func drawBenches(_ canvas: inout PixelCanvas, layout: PlazaLayout) {
-        let spots = layout.restSpots
-        let drawn = layout == .strip ? spots.prefix(6) : spots.prefix(spots.count)
+    /// Where falling foliage should start, so leaves let go of the canopy and not the trunk.
+    static func foliageTop(_ tree: TreeSpec, theme: PlazaTheme) -> CGPoint {
+        let size = min(max(tree.size, 0), 2)
+        switch theme {
+        case .agora:
+            return CGPoint(x: CGFloat(tree.x), y: CGFloat(tree.y + [3, 5, 7][size] * 2 + 3))
+        case .seaside:
+            return CGPoint(x: CGFloat(tree.x), y: CGFloat(tree.y + [6, 9, 12][size] + 1))
+        }
+    }
+
+    private static func drawBenches(_ canvas: inout PixelCanvas, geometry: PlazaGeometry) {
+        let spots = geometry.restSpots
+        let drawn = geometry.isStrip ? spots.prefix(6) : spots.prefix(spots.count)
         for spot in drawn {
             let x = Int(spot.x.rounded())
             let y = Int(spot.y.rounded()) - characterHeight / 2
@@ -487,15 +535,21 @@ enum PixelArt {
         canvas.fill(left + 1, y + 3, w - 2, 1, Palette.column)
     }
 
-    static func fountainFrame(_ frame: Int) -> SKTexture {
-        let wobble = phase(frame, over: 3)
-        return cached(.fountain(phase: wobble)) { buildFountainFrame(wobble) }
+    /// The one animated prop at the middle of the plaza.
+    static func centerpieceFrame(theme: PlazaTheme, frame: Int) -> SKTexture {
+        let wobble = phase(frame, over: centerpieceFrames)
+        return cached(.centerpiece(theme: theme, phase: wobble)) {
+            switch theme {
+            case .agora: return buildFountainFrame(wobble)
+            case .seaside: return buildParasolFrame(wobble)
+            }
+        }
     }
 
     private static func buildFountainFrame(_ wobble: Int) -> SKTexture {
-        var canvas = PixelCanvas(width: fountainWidth, height: fountainHeight, fill: Palette.clear)
-        canvas.fill(0, 0, fountainWidth, 3, Palette.basin)
-        canvas.fill(0, 2, fountainWidth, 1, Palette.columnShadow)
+        var canvas = PixelCanvas(width: centerpieceWidth, height: centerpieceHeight, fill: Palette.clear)
+        canvas.fill(0, 0, centerpieceWidth, 3, Palette.basin)
+        canvas.fill(0, 2, centerpieceWidth, 1, Palette.columnShadow)
         canvas.fill(2, 3, 24, 5, Palette.water)
         canvas.fill(4 + wobble, 5, 20 - wobble * 2, 2, Palette.waterLight)
         canvas.fill(12, 8, 4, 5, Palette.basin)
@@ -626,37 +680,51 @@ enum PixelArt {
         cached(.bubble) { buildBubble() }
     }
 
-    static func bird(_ frame: Int) -> SKTexture {
+    static func bird(theme: PlazaTheme, frame: Int) -> SKTexture {
         let flap = phase(frame, over: 2)
-        return cached(.bird(phase: flap)) { buildBird(flap) }
+        return cached(.bird(theme: theme, phase: flap)) { buildBird(theme: theme, flap: flap) }
     }
 
-    private static func buildBird(_ flap: Int) -> SKTexture {
+    private static func buildBird(theme: PlazaTheme, flap: Int) -> SKTexture {
         var canvas = PixelCanvas(width: 7, height: 5, fill: Palette.clear)
-        canvas.fill(2, 2, 3, 1, Palette.ink)
-        canvas.set(5, 2, Palette.ink)
-        canvas.set(1, 2, Palette.ink)
+        // A gull is the same silhouette in a lighter feather, so the shore keeps its own
+        // bird without a second flight path.
+        let feather = theme == .seaside ? Shore.gull : Palette.ink
+        canvas.fill(2, 2, 3, 1, feather)
+        canvas.set(5, 2, feather)
+        canvas.set(1, 2, feather)
         if flap == 0 {
-            canvas.set(2, 3, Palette.ink)
-            canvas.set(4, 3, Palette.ink)
-            canvas.set(2, 1, Palette.ink)
-            canvas.set(4, 1, Palette.ink)
+            canvas.set(2, 3, feather)
+            canvas.set(4, 3, feather)
+            canvas.set(2, 1, feather)
+            canvas.set(4, 1, feather)
         } else {
-            canvas.fill(0, 2, 2, 1, Palette.ink)
-            canvas.fill(5, 2, 2, 1, Palette.ink)
+            canvas.fill(0, 2, 2, 1, feather)
+            canvas.fill(5, 2, 2, 1, feather)
+        }
+        if theme == .seaside {
+            canvas.set(0, 2, Palette.ink)
+            canvas.set(6, 2, Palette.ink)
         }
         return canvas.texture()
     }
 
-    static func leaf() -> SKTexture {
-        cached(.leaf) { buildLeaf() }
+    static func leaf(theme: PlazaTheme) -> SKTexture {
+        cached(.leaf(theme: theme)) { buildLeaf(theme: theme) }
     }
 
-    private static func buildLeaf() -> SKTexture {
+    private static func buildLeaf(theme: PlazaTheme) -> SKTexture {
         var canvas = PixelCanvas(width: 3, height: 3, fill: Palette.clear)
-        canvas.set(1, 1, Palette.olive)
-        canvas.set(1, 2, Palette.oliveLight)
-        canvas.set(0, 1, Palette.oliveDark)
+        switch theme {
+        case .agora:
+            canvas.set(1, 1, Palette.olive)
+            canvas.set(1, 2, Palette.oliveLight)
+            canvas.set(0, 1, Palette.oliveDark)
+        case .seaside:
+            canvas.set(1, 1, Shore.frond)
+            canvas.set(1, 2, Shore.frondLight)
+            canvas.set(0, 1, Shore.frondDark)
+        }
         return canvas.texture()
     }
 
@@ -675,7 +743,7 @@ enum PixelArt {
         return canvas.texture()
     }
 
-    private static func phase(_ frame: Int, over period: Int) -> Int {
+    static func phase(_ frame: Int, over period: Int) -> Int {
         let step = frame % period
         return step < 0 ? step + period : step
     }

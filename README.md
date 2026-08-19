@@ -39,13 +39,26 @@ bar. Cursor needs to be restarted once for a freshly installed hook to take effe
 ### Using it
 
 - **Left-click** the menu bar icon: show or hide the plaza
-- **Right-click** (or Control-click): **Always on Top**, nickname, plaza token, show/hide, hooks, quit
+- **Right-click** (or Control-click): **Style**, **Always on Top**, nickname, plaza token, show/hide, hooks, quit
 - **Drag** the strip anywhere; Agore remembers where you put it
 - With **Always on Top** enabled the plaza joins every Space, survives clicks elsewhere, and
   comes back automatically on the next launch
 
 The bar along the bottom shows how many people are on the plaza, what your own agent is up
 to, whether hooks are installed, and when the last event arrived.
+
+### Styles
+
+Two worlds, picked from **Style** in the status item menu or **View → Style** in the menu
+bar, and remembered across launches:
+
+| Style | The plaza is |
+| --- | --- |
+| Greek Agora | Marble paving under a colonnade, a fountain, olive trees, stone benches |
+| Sunny Seaside | A beach under a big sky, surf and a bay, palms, a parasol, beach towels |
+
+Both keep the same daylight cycle, and both have a couple of pixel cats loafing about
+where nobody is walking. Switching styles repaints the plaza and everyone walks back in.
 
 ### What the pixel people are doing
 
@@ -118,7 +131,7 @@ ids never leave the Mac.
 ```
 Apps/Agore/          AppKit shell: status item, floating panel, onboarding window
 Sources/AgoreCore/   presence model, Cursor adapters, plaza protocol, SQLite store
-Sources/AgorePlaza/  pixel art, SpriteKit scene, character behaviour
+Sources/AgorePlaza/  pixel art, styles, SpriteKit scene, character behaviour
 server/              Go WebSocket plaza (in-memory queue + broadcast)
 Resources/hooks/     the Cursor hook forwarder that gets installed for you
 Scripts/             Xcode project and app icon generators

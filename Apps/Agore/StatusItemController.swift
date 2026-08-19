@@ -9,17 +9,20 @@ final class StatusItemController: NSObject {
     private let onInstall: () -> Void
     private let onNickname: (String) -> Void
     private let onToken: (String) -> Void
+    private let onTheme: (PlazaTheme) -> Void
 
     init(
         store: PresenceStore,
         onInstall: @escaping () -> Void,
         onNickname: @escaping (String) -> Void,
-        onToken: @escaping (String) -> Void
+        onToken: @escaping (String) -> Void,
+        onTheme: @escaping (PlazaTheme) -> Void
     ) {
         self.store = store
         self.onInstall = onInstall
         self.onNickname = onNickname
         self.onToken = onToken
+        self.onTheme = onTheme
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
         panel = PlazaPanelController(store: store, onInstall: onInstall)
         super.init()
@@ -72,6 +75,8 @@ final class StatusItemController: NSObject {
         menu.addItem(visibility)
 
         menu.addItem(.separator())
+        menu.addItem(styleItem())
+        menu.addItem(.separator())
 
         let nick = NSMenuItem(
             title: "Nickname…",
@@ -111,6 +116,37 @@ final class StatusItemController: NSObject {
         statusItem.menu = menu
         statusItem.button?.performClick(nil)
         statusItem.menu = nil
+    }
+
+    /// The styles sit in a submenu, ticked like a radio group so the plaza on screen is
+    /// the one marked here.
+    private func styleItem() -> NSMenuItem {
+        let current = PlazaTheme.current
+        let item = NSMenuItem(title: "Style", action: nil, keyEquivalent: "")
+        let submenu = NSMenu()
+        for theme in PlazaTheme.allCases {
+            let choice = NSMenuItem(
+                title: theme.displayName,
+                action: #selector(selectTheme(_:)),
+                keyEquivalent: ""
+            )
+            choice.target = self
+            choice.representedObject = theme.rawValue
+            choice.state = theme == current ? .on : .off
+            submenu.addItem(choice)
+        }
+        item.submenu = submenu
+        return item
+    }
+
+    @objc private func selectTheme(_ sender: NSMenuItem) {
+        guard let raw = sender.representedObject as? String,
+              let theme = PlazaTheme(rawValue: raw) else { return }
+        onTheme(theme)
+    }
+
+    func apply(theme: PlazaTheme) {
+        panel.apply(theme: theme)
     }
 
     @objc private func togglePinned() {

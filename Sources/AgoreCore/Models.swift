@@ -213,6 +213,7 @@ public enum AgoreConstants {
     public static let plazaURLKey = "AgorePlazaURL"
     public static let plazaTokenKey = "AgorePlazaToken"
     public static let displayNameKey = "AgoreDisplayName"
+    public static let themeKey = "AgoreTheme"
     public static let defaultPlazaURL = "wss://agore.bytebar.dev/v1/plaza"
     public static let plazaProtocolVersion = 1
     public static let plazaHeartbeat: TimeInterval = 25
