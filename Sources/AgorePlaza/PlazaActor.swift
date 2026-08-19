@@ -202,26 +202,15 @@ struct PlazaAnchors {
         self.layout = layout
         switch layout {
         case .strip:
-            let restY = CGFloat(layout.groundY + PixelArt.characterHeight / 2)
-            let lanes: [CGFloat] = [138, 222, 92, 268, 46, 314, 20, 340]
-            benches = lanes.map { CGPoint(x: $0, y: restY) }
-            strolls = lanes.map { CGPoint(x: $0 + 10, y: restY - 3) }
+            benches = layout.restSpots
+            strolls = benches.map { CGPoint(x: $0.x + 10, y: $0.y - 3) }
             exits = [
-                CGPoint(x: 8, y: restY),
-                CGPoint(x: CGFloat(layout.worldWidth) - 8, y: restY),
+                CGPoint(x: 8, y: benches[0].y),
+                CGPoint(x: CGFloat(layout.worldWidth) - 8, y: benches[0].y),
             ]
         case .courtyard:
             // Keep the first arrivals around the fountain, well inside the frame.
-            benches = [
-                CGPoint(x: 88, y: 100),
-                CGPoint(x: 152, y: 100),
-                CGPoint(x: 72, y: 128),
-                CGPoint(x: 168, y: 128),
-                CGPoint(x: 96, y: 156),
-                CGPoint(x: 144, y: 156),
-                CGPoint(x: 80, y: 72),
-                CGPoint(x: 160, y: 72),
-            ]
+            benches = layout.restSpots
             strolls = [
                 CGPoint(x: 100, y: 112),
                 CGPoint(x: 140, y: 112),

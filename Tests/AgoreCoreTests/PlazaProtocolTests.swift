@@ -14,6 +14,14 @@ final class PlazaProtocolTests: XCTestCase {
         XCTAssertEqual(got.v, 1)
     }
 
+    func testPlazaPeriodByHour() {
+        XCTAssertEqual(PlazaPeriod.at(hour: 3), .night)
+        XCTAssertEqual(PlazaPeriod.at(hour: 7), .dusk)
+        XCTAssertEqual(PlazaPeriod.at(hour: 12), .day)
+        XCTAssertEqual(PlazaPeriod.at(hour: 18), .dusk)
+        XCTAssertEqual(PlazaPeriod.at(hour: 22), .night)
+    }
+
     func testPresenceDTOMapsKind() {
         let dto = PlazaPresenceDTO(
             client_id: "remote",

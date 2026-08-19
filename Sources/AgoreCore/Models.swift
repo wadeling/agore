@@ -23,6 +23,26 @@ public enum PlazaLinkState: String, Sendable {
     case unauthorized
 }
 
+/// Daylight on the plaza. Backgrounds are cached per period so a dusk sky is not
+/// rebuilt every frame; the scene swaps the texture when the hour rolls over.
+public enum PlazaPeriod: Hashable, Sendable {
+    case day
+    case dusk
+    case night
+
+    public static func current(at date: Date = Date()) -> PlazaPeriod {
+        at(hour: Calendar.current.component(.hour, from: date))
+    }
+
+    public static func at(hour: Int) -> PlazaPeriod {
+        switch hour {
+        case 6..<8, 17..<20: return .dusk
+        case 0..<6, 20...23: return .night
+        default: return .day
+        }
+    }
+}
+
 public struct PlazaMember: Equatable, Identifiable, Sendable {
     public var id: String
     public var displayName: String
