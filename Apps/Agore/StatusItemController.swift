@@ -6,14 +6,14 @@ final class StatusItemController: NSObject {
     private let statusItem: NSStatusItem
     private let panel: PlazaPanelController
     private let store: PresenceStore
-    private let onInstall: () -> Void
+    private let onInstall: (AgentProvider?) -> Void
     private let onNickname: (String) -> Void
     private let onToken: (String) -> Void
     private let onTheme: (PlazaTheme) -> Void
 
     init(
         store: PresenceStore,
-        onInstall: @escaping () -> Void,
+        onInstall: @escaping (AgentProvider?) -> Void,
         onNickname: @escaping (String) -> Void,
         onToken: @escaping (String) -> Void,
         onTheme: @escaping (PlazaTheme) -> Void
@@ -24,7 +24,7 @@ final class StatusItemController: NSObject {
         self.onToken = onToken
         self.onTheme = onTheme
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
-        panel = PlazaPanelController(store: store, onInstall: onInstall)
+        panel = PlazaPanelController(store: store, onInstall: { onInstall(nil) })
         super.init()
 
         if let button = statusItem.button {
@@ -96,13 +96,7 @@ final class StatusItemController: NSObject {
 
         menu.addItem(.separator())
 
-        let hooks = NSMenuItem(
-            title: store.hooksInstalled ? "Hooks Installed" : "Install Hooks",
-            action: store.hooksInstalled ? nil : #selector(installHooks),
-            keyEquivalent: ""
-        )
-        hooks.target = self
-        menu.addItem(hooks)
+        menu.addItem(bridgesItem())
 
         menu.addItem(.separator())
         menu.addItem(
@@ -116,6 +110,28 @@ final class StatusItemController: NSObject {
         statusItem.menu = menu
         statusItem.button?.performClick(nil)
         statusItem.menu = nil
+    }
+
+    /// One line per agent provider, ticked when Agore is wired into it. Choosing an
+    /// unticked one installs the bridge, including for an agent Agore could not find on
+    /// the Mac — someone who keeps their config somewhere unusual can still opt in.
+    private func bridgesItem() -> NSMenuItem {
+        let item = NSMenuItem(title: "Agents", action: nil, keyEquivalent: "")
+        let submenu = NSMenu()
+        for status in store.bridges {
+            let suffix = status.isDetected ? "" : " (not found)"
+            let choice = NSMenuItem(
+                title: status.provider.bridgeName + suffix,
+                action: #selector(installBridge(_:)),
+                keyEquivalent: ""
+            )
+            choice.target = self
+            choice.representedObject = status.provider.rawValue
+            choice.state = status.isInstalled ? .on : .off
+            submenu.addItem(choice)
+        }
+        item.submenu = submenu
+        return item
     }
 
     /// The styles sit in a submenu, ticked like a radio group so the plaza on screen is
@@ -160,8 +176,10 @@ final class StatusItemController: NSObject {
         panel.toggle(relativeTo: statusItem.button)
     }
 
-    @objc private func installHooks() {
-        onInstall()
+    @objc private func installBridge(_ sender: NSMenuItem) {
+        guard let raw = sender.representedObject as? String,
+              let provider = AgentProvider(rawValue: raw) else { return }
+        onInstall(provider)
     }
 
     @objc private func editNickname() {

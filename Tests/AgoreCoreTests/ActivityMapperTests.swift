@@ -21,6 +21,20 @@ final class ActivityMapperTests: XCTestCase {
         XCTAssertEqual(ActivityMapper.kind(eventName: "beforeMCPExecution", toolName: nil), .running)
     }
 
+    func testOpencodeMapping() {
+        XCTAssertEqual(ActivityMapper.kind(toolName: "read"), .reading)
+        XCTAssertEqual(ActivityMapper.kind(toolName: "list"), .reading)
+        XCTAssertEqual(ActivityMapper.kind(toolName: "edit"), .writing)
+        XCTAssertEqual(ActivityMapper.kind(toolName: "patch"), .writing)
+        XCTAssertEqual(ActivityMapper.kind(toolName: "bash"), .running)
+        XCTAssertEqual(ActivityMapper.kind(eventName: "tool.execute.before", toolName: "bash"), .running)
+        XCTAssertEqual(ActivityMapper.kind(eventName: "tool.execute.after", toolName: "bash"), .thinking)
+        XCTAssertEqual(ActivityMapper.kind(eventName: "session.created", toolName: nil), .waiting)
+        XCTAssertEqual(ActivityMapper.kind(eventName: "message.updated", toolName: nil), .waiting)
+        XCTAssertEqual(ActivityMapper.kind(eventName: "permission.asked", toolName: nil), .waiting)
+        XCTAssertEqual(ActivityMapper.kind(eventName: "session.idle", toolName: nil), .idle)
+    }
+
     func testProjectSlug() {
         XCTAssertEqual(ActivityMapper.projectSlug(fromWorkspaceRoots: ["/Users/me/src/agore"]), "agore")
         XCTAssertEqual(ActivityMapper.displayName(projectSlug: "agore", isSubagent: true), "agore · sub")

@@ -339,7 +339,7 @@ extension PixelArt {
         let drawn = geometry.isStrip ? Array(spots.prefix(6)) : spots
         for (index, spot) in drawn.enumerated() {
             let x = Int(spot.x.rounded())
-            let y = max(0, Int(spot.y.rounded()) - characterHeight / 2)
+            let y = geometry.furnitureY(for: spot)
             drawTowel(&canvas, x: x, y: y, stripe: Shore.towels[index % Shore.towels.count])
         }
     }

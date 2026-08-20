@@ -209,7 +209,9 @@ struct PlazaGeometry: Hashable, Sendable {
         }
     }
 
-    /// Cats keep to themselves near the water or the fountain, out of the walking lanes.
+    /// Strays that belong to the scenery, keeping out of the walking lanes. The shore has
+    /// none, because there the agents are the cats and a nameless one would just be
+    /// another agent you cannot account for.
     var catSpots: [CGPoint] {
         switch (theme, layout) {
         case (.agora, .strip):
@@ -220,14 +222,19 @@ struct PlazaGeometry: Hashable, Sendable {
                 CGPoint(x: 70, y: 44),
                 CGPoint(x: 196, y: 118),
             ]
-        case (.seaside, .strip):
-            return [CGPoint(x: 122, y: 21), CGPoint(x: 134, y: 21)]
-        case (.seaside, .courtyard):
-            return [
-                CGPoint(x: 82, y: 112),
-                CGPoint(x: 95, y: 111),
-                CGPoint(x: 128, y: 18),
-            ]
+        case (.seaside, _):
+            return []
+        }
+    }
+
+    /// The bottom row of the bench or towel painted at a rest spot. Furniture is five
+    /// pixels deep and a person stands ankle-deep in it; a cat is half as tall and has to
+    /// sit at the far edge, or the towel would cover half of it.
+    func furnitureY(for spot: CGPoint) -> Int {
+        let spotY = Int(spot.y.rounded())
+        switch theme {
+        case .agora: return max(0, spotY - PixelArt.characterHeight / 2)
+        case .seaside: return max(0, spotY - PixelArt.catHeight / 2 - 3)
         }
     }
 

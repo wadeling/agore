@@ -10,6 +10,8 @@ struct HookPayload: Decodable {
     var parent_conversation_id: String?
     var workspace_roots: [String]?
     var tool_use_id: String?
+    /// Absent from Cursor's forwarder, which predates there being anything else to be.
+    var provider: String?
 
     func asPresenceEvent(receivedAt: Date = Date()) -> PresenceEvent? {
         let eventName = hook_event_name
@@ -41,6 +43,7 @@ struct HookPayload: Decodable {
             occurredAt: occurred,
             hookEventName: eventName,
             toolUseId: tool_use_id?.isEmpty == false ? tool_use_id : nil,
+            provider: provider?.isEmpty == false ? provider! : AgoreConstants.providerCursor,
             source: .hook
         )
     }

@@ -1,6 +1,9 @@
 import Foundation
 
 public enum ActivityMapper {
+    /// Cursor's hook names and opencode's event names share one table. They never
+    /// collide — Cursor spells its events in camel case, opencode in dotted lower case —
+    /// and both describe the same handful of things an agent can be doing.
     public static func kind(eventName: String, toolName: String?) -> ActivityKind {
         let event = eventName.trimmingCharacters(in: .whitespacesAndNewlines)
         switch event {
@@ -22,25 +25,37 @@ public enum ActivityMapper {
         // the result rather than still running it.
         case "afterShellExecution", "afterMCPExecution", "postToolUse", "postToolUseFailure":
             return .thinking
+        // opencode: a fresh session, a user turn, and a prompt for permission all leave
+        // the agent standing about. `session.idle` is the end of its turn, and is the
+        // closest thing opencode has to Cursor's sessionEnd.
+        case "session.created", "session.error", "message.updated", "permission.asked":
+            return .waiting
+        case "session.idle":
+            return .idle
+        case "tool.execute.after":
+            return .thinking
+        // "tool.execute.before" falls through to the tool it is about to run.
         default:
             return kind(toolName: toolName) ?? .thinking
         }
     }
 
+    /// Matched case-insensitively because the same tools are PascalCase in Cursor and
+    /// lower case in opencode, and a couple of them are spelled differently besides.
     public static func kind(toolName: String?) -> ActivityKind? {
         guard let raw = toolName?.trimmingCharacters(in: .whitespacesAndNewlines), !raw.isEmpty else {
             return nil
         }
-        let name = raw.split(separator: ":").first.map(String.init) ?? raw
+        let name = (raw.split(separator: ":").first.map(String.init) ?? raw).lowercased()
         switch name {
-        case "Read", "Grep", "Glob", "WebSearch", "WebFetch", "SemanticSearch":
+        case "read", "grep", "glob", "list", "websearch", "webfetch", "semanticsearch":
             return .reading
-        case "Write", "StrReplace", "EditNotebook", "ApplyPatch", "Delete":
+        case "write", "edit", "multiedit", "patch", "strreplace", "editnotebook", "applypatch", "delete":
             return .writing
-        case "Shell", "Task", "AwaitShell", "CallMcpTool", "GenerateImage":
+        case "shell", "bash", "task", "batch", "awaitshell", "callmcptool", "generateimage":
             return .running
         default:
-            if name.hasPrefix("MCP") || name.hasPrefix("browser_") {
+            if name.hasPrefix("mcp") || name.hasPrefix("browser_") {
                 return .running
             }
             return .thinking

@@ -4,7 +4,14 @@ import Combine
 @MainActor
 public final class PresenceStore: ObservableObject {
     @Published public private(set) var sessions: [AgentSession] = []
-    @Published public var hooksInstalled = false
+    /// Wiring up a new agent adds a person to the plaza, so the roster has to be told.
+    @Published public var bridges: [BridgeStatus] = [] {
+        didSet {
+            guard bridges != oldValue else { return }
+            publish()
+            notifyInstanceChange()
+        }
+    }
     @Published public var lastEventAt: Date?
     @Published public var ingestPort: UInt16 = 0
     @Published public var statusMessage: String = "starting"
@@ -12,9 +19,14 @@ public final class PresenceStore: ObservableObject {
 
     public var identity = ClientIdentity.ephemeral()
     public var onInstanceChange: ((PlazaMember) -> Void)?
+    /// An agent whose bridge was removed has to be taken off the plaza explicitly; the
+    /// server only forgets a client's people when the socket itself goes.
+    public var onInstanceLeave: ((String) -> Void)?
 
     private static let shellCall = "shell"
     private static let mcpCall = "mcp"
+    /// The agent's turn is over: Cursor says so outright, opencode by falling idle.
+    private static let turnEndEvents: Set<String> = ["sessionEnd", "session.idle"]
 
     public let idleTimeout: TimeInterval
     private let databaseURL: URL
@@ -22,8 +34,8 @@ public final class PresenceStore: ObservableObject {
     private var byId: [String: AgentSession] = [:]
     private var remoteRoster: [String: PlazaMember] = [:]
     private var idleTimer: Timer?
-    private var lastPublished: PlazaMember?
-    private var lastPublishedAt: Date?
+    private var lastPublished: [String: PlazaMember] = [:]
+    private var lastPublishedAt: [String: Date] = [:]
     /// Tool calls that opened but have not reported back, keyed by session then by
     /// tool_use_id. Cursor goes quiet for the whole duration of a tool, so without this
     /// an agent on a five minute test run is indistinguishable from one that quit.
@@ -48,7 +60,7 @@ public final class PresenceStore: ObservableObject {
             }
             lastEventAt = restored.map(\.lastSeen).max()
             publish()
-            statusMessage = byId.isEmpty ? "waiting for cursor" : "\(byId.count) restored"
+            statusMessage = byId.isEmpty ? "waiting for agents" : "\(byId.count) restored"
         } catch {
             statusMessage = "store error"
         }
@@ -65,7 +77,8 @@ public final class PresenceStore: ObservableObject {
 
         trackToolCall(event)
 
-        if event.hookEventName == "sessionEnd" || event.kind == .idle && event.hookEventName == "subagentStop" {
+        let name = event.hookEventName ?? ""
+        if Self.turnEndEvents.contains(name) || (name == "subagentStop" && event.kind == .idle) {
             if var existing = byId[event.conversationId] {
                 existing.kind = .idle
                 existing.lastSeen = event.occurredAt
@@ -84,7 +97,7 @@ public final class PresenceStore: ObservableObject {
         var session = byId[event.conversationId] ?? AgentSession(
             id: event.conversationId,
             parentId: event.parentId,
-            provider: AgoreConstants.providerCursor,
+            provider: event.provider,
             projectSlug: event.projectSlug,
             displayName: display,
             kind: event.kind,
@@ -102,6 +115,7 @@ public final class PresenceStore: ObservableObject {
         session.kind = event.kind
         session.toolName = event.toolName
         session.lastSeen = event.occurredAt
+        session.provider = event.provider
         session.source = event.source
         byId[session.id] = session
         lastEventAt = event.occurredAt
@@ -131,8 +145,13 @@ public final class PresenceStore: ObservableObject {
             open(Self.mcpCall, for: event.conversationId, at: event.occurredAt)
         case "afterMCPExecution":
             close(Self.mcpCall, for: event.conversationId)
+        // opencode's pair always carries a call id, so it needs no fallback key.
+        case "tool.execute.before":
+            open(event.toolUseId, for: event.conversationId, at: event.occurredAt)
+        case "tool.execute.after":
+            close(event.toolUseId, for: event.conversationId)
         // The agent loop ended, so nothing it started is still running.
-        case "stop", "sessionEnd", "subagentStop":
+        case "stop", "sessionEnd", "subagentStop", "session.idle":
             inFlight.removeValue(forKey: event.conversationId)
         default:
             break
@@ -166,13 +185,16 @@ public final class PresenceStore: ObservableObject {
             if state != .online {
                 remoteRoster.removeAll()
             }
+        // Our own people are built from local state, not from what the server echoes back:
+        // a member is ours when the frame names this client as its owner, whichever agent
+        // it stands for.
         case .snapshot(let members):
             remoteRoster = [:]
-            for member in members where member.id != identity.clientId {
+            for member in members where !member.isLocal {
                 remoteRoster[member.id] = member
             }
         case .presence(let member):
-            guard member.id != identity.clientId else { return }
+            guard !member.isLocal else { return }
             remoteRoster[member.id] = member
         case .leave(let id):
             remoteRoster.removeValue(forKey: id)
@@ -198,37 +220,76 @@ public final class PresenceStore: ObservableObject {
         }
     }
 
-    /// One pixel person per Cursor instance: fold every local conversation into a single
-    /// activity, then overlay whoever the plaza server currently knows about.
-    public func instancePresence(at now: Date = Date()) -> PlazaMember {
-        let active = activeSessions(at: now).filter { $0.kind != .idle }
-        let order: [ActivityKind] = [.running, .writing, .reading, .thinking, .waiting]
-        let kind = order.first { candidate in
-            active.contains { $0.kind == candidate }
-        } ?? .idle
+    /// One pixel person per agent this client is wired into, each folding that agent's
+    /// conversations into a single activity. Two agents on one Mac are two people on the
+    /// plaza; a single agent's subagents still share one.
+    public func localMembers(at now: Date = Date()) -> [PlazaMember] {
+        let providers = localProviders()
+        guard !providers.isEmpty else {
+            // No agent is wired up at all. Standing on the plaza is about being connected,
+            // so the client still gets a person rather than an empty stage.
+            return [
+                PlazaMember(
+                    id: identity.clientId,
+                    displayName: ClientIdentity.displayName,
+                    kind: .idle,
+                    lastSeen: lastEventAt ?? now,
+                    isLocal: true
+                )
+            ]
+        }
+        return providers.map { member(for: $0, at: now) }
+    }
+
+    /// What this client as a whole is up to, for the one-line status strip. The busiest
+    /// agent speaks for the Mac.
+    public func localActivity(at now: Date = Date()) -> ActivityKind {
+        Self.dominantKind(of: localMembers(at: now).map(\.kind))
+    }
+
+    /// Agents Agore is wired into, plus any that are reporting activity regardless — a
+    /// bridge installed by hand still deserves its person. Ordered so the plaza does not
+    /// reshuffle between refreshes.
+    private func localProviders() -> [AgentProvider] {
+        let installed = Set(bridges.filter(\.isInstalled).map(\.provider))
+        let reporting = Set(byId.values.compactMap { AgentProvider(rawValue: $0.provider) })
+        return AgentProvider.allCases.filter { installed.contains($0) || reporting.contains($0) }
+    }
+
+    private func member(for provider: AgentProvider, at now: Date) -> PlazaMember {
+        let active = activeSessions(at: now).filter { $0.kind != .idle && $0.provider == provider.rawValue }
         let project = active.first(where: { !$0.projectSlug.isEmpty })?.projectSlug ?? ""
         // Everyone ages us out on this timestamp, so an open tool call has to count as
         // being seen even though it produces no events of its own.
         let seen = active.contains { isBusy($0.id, at: now) }
             ? now
-            : (active.map(\.lastSeen).max() ?? lastEventAt ?? now)
+            : (active.map(\.lastSeen).max() ?? now)
         return PlazaMember(
-            id: identity.clientId,
+            id: PlazaMember.id(client: identity.clientId, provider: provider),
+            // The nickname alone: which agent this is rides along in the member id, and the
+            // plaza works out how to fit the two of them under a pixel person.
             displayName: ClientIdentity.displayName,
-            kind: kind,
+            kind: Self.dominantKind(of: active.map(\.kind)),
             project: project,
             lastSeen: seen,
+            provider: provider.rawValue,
             isLocal: true
         )
     }
 
+    private static func dominantKind(of kinds: [ActivityKind]) -> ActivityKind {
+        let order: [ActivityKind] = [.running, .writing, .reading, .thinking, .waiting]
+        return order.first { kinds.contains($0) } ?? .idle
+    }
+
     /// Standing on the plaza is about being connected, not about being busy. The server
-    /// drops a client from the roster the moment its socket closes, so everyone still
-    /// listed — ourselves first of all — gets a pixel person, idle or not.
+    /// drops a client's people from the roster the moment its socket closes, so everyone
+    /// still listed — ourselves first of all — gets a pixel person, idle or not.
     public func plazaMembers(at now: Date = Date()) -> [PlazaMember] {
         var members = remoteRoster
-        let local = instancePresence(at: now)
-        members[local.id] = local
+        for member in localMembers(at: now) {
+            members[member.id] = member
+        }
         return members.values.sorted { $0.lastSeen > $1.lastSeen }
     }
 
@@ -303,17 +364,26 @@ public final class PresenceStore: ObservableObject {
     }
 
     private func notifyInstanceChange(at now: Date = Date()) {
-        let current = instancePresence(at: now)
-        let changed = current.kind != lastPublished?.kind
-            || current.project != lastPublished?.project
-            || current.displayName != lastPublished?.displayName
-        // Peers time us out on the timestamp we last sent them, so a long tool call
-        // needs a refresh even when the activity itself has not changed.
-        let stale = current.kind != .idle
-            && (lastPublishedAt.map { now.timeIntervalSince($0) >= AgoreConstants.plazaHeartbeat } ?? true)
-        guard changed || stale else { return }
-        lastPublished = current
-        lastPublishedAt = now
-        onInstanceChange?(current)
+        let members = localMembers(at: now)
+        let live = Set(members.map(\.id))
+        for id in Array(lastPublished.keys) where !live.contains(id) {
+            lastPublished.removeValue(forKey: id)
+            lastPublishedAt.removeValue(forKey: id)
+            onInstanceLeave?(id)
+        }
+        for member in members {
+            let previous = lastPublished[member.id]
+            let changed = member.kind != previous?.kind
+                || member.project != previous?.project
+                || member.displayName != previous?.displayName
+            // Peers time us out on the timestamp we last sent them, so a long tool call
+            // needs a refresh even when the activity itself has not changed.
+            let stale = member.kind != .idle
+                && (lastPublishedAt[member.id].map { now.timeIntervalSince($0) >= AgoreConstants.plazaHeartbeat } ?? true)
+            guard changed || stale else { continue }
+            lastPublished[member.id] = member
+            lastPublishedAt[member.id] = now
+            onInstanceChange?(member)
+        }
     }
 }

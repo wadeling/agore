@@ -6,7 +6,7 @@ enum MainMenu {
     /// offered from the status item and whichever menu is opened second has to agree.
     @MainActor private static let styleMenuDelegate = StyleMenuDelegate()
 
-    static func make() -> NSMenu {
+    @MainActor static func make() -> NSMenu {
         let menu = NSMenu()
         menu.addItem(appItem())
         menu.addItem(editItem())
@@ -45,7 +45,7 @@ enum MainMenu {
         return item
     }
 
-    private static func viewItem() -> NSMenuItem {
+    @MainActor private static func viewItem() -> NSMenuItem {
         let style = NSMenu(title: "Style")
         style.delegate = styleMenuDelegate
         let styleItem = NSMenuItem(title: "Style", action: nil, keyEquivalent: "")

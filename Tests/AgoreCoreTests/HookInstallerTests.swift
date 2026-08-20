@@ -40,6 +40,30 @@ final class HookInstallerTests: XCTestCase {
         XCTAssertTrue(installer.isSubscriptionComplete(installer.mergeAgore(into: older)))
     }
 
+    /// The forwarder is reconciled on a timer, and Cursor runs it straight off disk.
+    func testForwarderIsLeftAloneWhenUnchanged() throws {
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent("agore-hooks-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        let source = dir.appendingPathComponent("source.sh")
+        try "#!/usr/bin/env bash\nexit 0\n".write(to: source, atomically: true, encoding: .utf8)
+
+        let installer = HookInstaller(
+            hooksFile: dir.appendingPathComponent("hooks.json"),
+            hooksDirectory: dir.appendingPathComponent("hooks")
+        )
+        let installed = try installer.syncForwarder(source: source)
+        XCTAssertTrue(FileManager.default.isExecutableFile(atPath: installed.path))
+        let firstWrite = try modifiedAt(installed)
+
+        try installer.syncForwarder(source: source)
+        XCTAssertEqual(try modifiedAt(installed), firstWrite)
+
+        try "#!/usr/bin/env bash\necho newer\nexit 0\n".write(to: source, atomically: true, encoding: .utf8)
+        try installer.syncForwarder(source: source)
+        XCTAssertEqual(try String(contentsOf: installed, encoding: .utf8), "#!/usr/bin/env bash\necho newer\nexit 0\n")
+        XCTAssertTrue(FileManager.default.isExecutableFile(atPath: installed.path))
+    }
+
     func testWritesHooksFile() throws {
         let dir = FileManager.default.temporaryDirectory.appendingPathComponent("agore-hooks-\(UUID().uuidString)")
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
@@ -56,5 +80,11 @@ final class HookInstallerTests: XCTestCase {
         XCTAssertTrue(installer.isInstalled)
         try installer.uninstall()
         XCTAssertFalse(installer.isInstalled)
+    }
+
+    private func modifiedAt(_ url: URL) throws -> Date {
+        try XCTUnwrap(
+            FileManager.default.attributesOfItem(atPath: url.path)[.modificationDate] as? Date
+        )
     }
 }

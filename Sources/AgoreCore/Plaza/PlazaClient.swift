@@ -11,7 +11,13 @@ public final class PlazaClient: @unchecked Sendable {
     private var session: URLSession?
     private var heartbeat: DispatchSourceTimer?
     private var debounceWork: DispatchWorkItem?
-    private var pending: PlazaMember?
+    /// The people this client stands for, keyed by member id: one client publishes a person
+    /// per agent, and a shared slot would let the busier agent swallow the other's frame.
+    /// Held whole so a reconnect can reintroduce all of them.
+    private var members: [String: PlazaMember] = [:]
+    /// Members changed since the last frame went out. One agent stirring should not
+    /// rebroadcast the ones standing still.
+    private var dirty: Set<String> = []
     private var running = false
     private var reconnectAttempt = 0
     private var lastURL: URL?
@@ -63,7 +69,8 @@ public final class PlazaClient: @unchecked Sendable {
 
     public func publish(_ member: PlazaMember) {
         queue.async {
-            self.pending = member
+            self.members[member.id] = member
+            self.dirty.insert(member.id)
             self.debounceWork?.cancel()
             let work = DispatchWorkItem { [weak self] in
                 guard let self else { return }
@@ -74,9 +81,16 @@ public final class PlazaClient: @unchecked Sendable {
         }
     }
 
-    public func sendNick(_ name: String) {
+    /// Takes one of this client's people off the plaza, for an agent Agore is no longer
+    /// wired into. The server forgets the rest of them when the socket closes.
+    public func publishLeave(_ memberId: String) {
         queue.async {
-            self.send(PlazaEnvelope.nick(name), generation: self.generation)
+            self.members.removeValue(forKey: memberId)
+            self.dirty.remove(memberId)
+            self.send(
+                PlazaEnvelope.leave(memberId, from: self.identity.clientId),
+                generation: self.generation
+            )
         }
     }
 
@@ -135,15 +149,15 @@ public final class PlazaClient: @unchecked Sendable {
         case "welcome":
             reconnectAttempt = 0
             emit(.link(.online))
-            let members = (envelope.snapshot ?? []).map { $0.asMember(localId: identity.clientId) }
-            emit(.snapshot(members))
-            flush(generation: generation)
+            let roster = (envelope.snapshot ?? []).map { $0.asMember(localId: identity.clientId) }
+            emit(.snapshot(roster))
+            flushAll(generation: generation)
         case "presence":
             if let dto = snapshotItem(from: envelope) {
                 emit(.presence(dto.asMember(localId: identity.clientId)))
             }
         case "leave":
-            if let id = envelope.client_id {
+            if let id = envelope.member_id ?? envelope.client_id {
                 emit(.leave(id))
             }
         case "error":
@@ -168,6 +182,7 @@ public final class PlazaClient: @unchecked Sendable {
         guard let id = envelope.client_id else { return nil }
         return PlazaPresenceDTO(
             client_id: id,
+            member_id: envelope.member_id,
             display_name: envelope.display_name ?? "",
             kind: envelope.kind ?? ActivityKind.thinking.rawValue,
             project: envelope.project ?? "",
@@ -176,8 +191,21 @@ public final class PlazaClient: @unchecked Sendable {
     }
 
     private func flush(generation: Int) {
-        guard let member = pending else { return }
-        send(PlazaEnvelope.presence(member), generation: generation)
+        sendPresence(for: dirty, generation: generation)
+    }
+
+    /// A fresh socket means a server that has never heard of us, so everybody is
+    /// reintroduced whether or not they moved.
+    private func flushAll(generation: Int) {
+        sendPresence(for: Set(members.keys), generation: generation)
+    }
+
+    private func sendPresence(for ids: Set<String>, generation: Int) {
+        dirty.subtract(ids)
+        for id in ids.sorted() {
+            guard let member = members[id] else { continue }
+            send(PlazaEnvelope.presence(member, from: identity.clientId), generation: generation)
+        }
     }
 
     private func send(_ envelope: PlazaEnvelope, generation: Int) {

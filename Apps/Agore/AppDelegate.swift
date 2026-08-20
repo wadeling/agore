@@ -6,7 +6,7 @@ import AgorePlaza
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private let store = PresenceStore()
     private let ingest = HookIngestServer()
-    private let installer = HookInstaller()
+    private let bridges = AgentBridges()
     private let scanner = CursorTranscriptScanner()
     private let identity = ClientIdentity.load()
     private lazy var plaza = PlazaClient(identity: identity)
@@ -38,6 +38,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         store.onInstanceChange = { [plaza] member in
             plaza.publish(member)
         }
+        store.onInstanceLeave = { [plaza] memberId in
+            plaza.publishLeave(memberId)
+        }
         plaza.onInbound = { [store] inbound in
             Task { @MainActor in
                 store.applyPlaza(inbound)
@@ -62,7 +65,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             store.statusMessage = "ingest failed"
         }
 
-        installHooksIfNeeded()
+        installBridges()
         scanTranscripts()
         setUpStatusItem()
         presentPlazaWindow()
@@ -71,7 +74,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         scanTimer = Timer.scheduledTimer(withTimeInterval: 30, repeats: true) { [weak self] _ in
-            self?.scanTranscripts()
+            Task { @MainActor in
+                self?.scanTranscripts()
+                self?.installBridges()
+            }
         }
     }
 
@@ -99,7 +105,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         let controller = PlazaWindowController(
             store: store,
-            onInstall: { [weak self] in self?.installHooksIfNeeded() },
+            onInstall: { [weak self] in self?.installBridges() },
             onClose: {}
         )
         windowController = controller
@@ -110,7 +116,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         guard statusItem == nil else { return }
         statusItem = StatusItemController(
             store: store,
-            onInstall: { [weak self] in self?.installHooksIfNeeded() },
+            onInstall: { [weak self] provider in self?.installBridges(provider) },
             onNickname: { [weak self] name in self?.applyNickname(name) },
             onToken: { [weak self] token in self?.applyToken(token) },
             onTheme: { [weak self] theme in self?.applyTheme(theme) }
@@ -126,9 +132,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         windowController?.apply(theme: theme)
     }
 
+    /// Renaming republishes every person this client owns, each with the agent it stands
+    /// for appended, so there is nothing a separate nick frame could say.
     private func applyNickname(_ name: String) {
         store.renameLocal(to: name)
-        plaza.sendNick(ClientIdentity.displayName)
     }
 
     private func applyToken(_ token: String) {
@@ -136,13 +143,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         plaza.reconnect()
     }
 
-    private func installHooksIfNeeded() {
-        do {
-            try installer.ensureInstalled()
-            store.hooksInstalled = installer.isInstalled
-        } catch {
-            store.hooksInstalled = false
-            store.statusMessage = "hooks install failed"
+    /// Runs on every scan tick as well as at launch, so an agent installed while Agore
+    /// was already sitting in the menu bar gets wired up on its own. Installing is a
+    /// no-op once the bridge is current.
+    private func installBridges(_ only: AgentProvider? = nil) {
+        let statuses = bridges.install(only)
+        store.bridges = statuses
+        if let failed = statuses.first(where: \.failed) {
+            store.statusMessage = "\(failed.provider.rawValue) install failed"
         }
     }
 

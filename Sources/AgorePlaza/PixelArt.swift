@@ -226,7 +226,8 @@ enum PixelArt {
         case bubble
         case bird(theme: PlazaTheme, phase: Int)
         case leaf(theme: PlazaTheme)
-        case cat(variant: Int, pose: CatPose, phase: Int)
+        case cat(variant: Int, pose: CatPose, phase: Int, small: Bool)
+        case catSleeper(variant: Int, phase: Int)
         case character(skin: UInt32, hair: UInt32, tunic: UInt32, kind: ActivityKind, phase: Int, small: Bool)
     }
 
@@ -521,8 +522,7 @@ enum PixelArt {
         let drawn = geometry.isStrip ? spots.prefix(6) : spots.prefix(spots.count)
         for spot in drawn {
             let x = Int(spot.x.rounded())
-            let y = Int(spot.y.rounded()) - characterHeight / 2
-            drawBench(&canvas, x: x, y: max(0, y))
+            drawBench(&canvas, x: x, y: geometry.furnitureY(for: spot))
         }
     }
 
@@ -598,6 +598,53 @@ enum PixelArt {
         canvas.set(2, 2, Palette.ink)
         canvas.fill(1, 1, 4, 1, Palette.ink)
         return canvas.texture()
+    }
+
+    /// A theme decides who inhabits the plaza: people on the agora, cats on the shore.
+    /// Mapping an activity onto a pose lives here, so an actor only has to say whether it
+    /// is currently on the move.
+    static func actorSize(theme: PlazaTheme, small: Bool) -> CGSize {
+        switch theme {
+        case .agora:
+            return small
+                ? CGSize(width: 12, height: 16)
+                : CGSize(width: characterWidth, height: characterHeight)
+        case .seaside:
+            return catSize(small: small)
+        }
+    }
+
+    static func actorBody(
+        theme: PlazaTheme,
+        hash: Int,
+        kind: ActivityKind,
+        moving: Bool,
+        frame: Int,
+        small: Bool
+    ) -> SKTexture {
+        switch theme {
+        case .agora:
+            // The idle sprite carries the walk cycle, so an agent on its way to bed borrows
+            // the waiting pose instead: standing and breathing rather than marching on the spot.
+            let visualKind: ActivityKind = kind == .idle ? (moving ? .idle : .waiting) : kind
+            return character(hash: hash, kind: visualKind, frame: frame, small: small)
+        case .seaside:
+            return cat(variant: hash, pose: moving ? .walking : .sitting, frame: frame, small: small)
+        }
+    }
+
+    static func actorSleeper(theme: PlazaTheme, hash: Int, frame: Int) -> SKTexture {
+        switch theme {
+        case .agora: return sleeper(hash: hash, frame: frame)
+        case .seaside: return catSleeper(variant: hash, frame: frame)
+        }
+    }
+
+    static func actorSleeperSize(theme: PlazaTheme) -> CGSize {
+        switch theme {
+        case .agora: return CGSize(width: sleeperWidth, height: sleeperHeight)
+        case .seaside: return CGSize(width: catSleeperWidth, height: catSleeperHeight)
+        }
     }
 
     static func character(hash: Int, kind: ActivityKind, frame: Int, small: Bool) -> SKTexture {

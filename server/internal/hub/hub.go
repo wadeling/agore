@@ -34,10 +34,12 @@ type conn struct {
 }
 
 type Hub struct {
-	token  string
-	inbox  chan inbound
-	mu     sync.Mutex
-	conns  map[string]*conn
+	token string
+	inbox chan inbound
+	mu    sync.Mutex
+	conns map[string]*conn
+	// Keyed by member id, not by client: a client running two coding agents stands on the
+	// plaza as two people over the one socket.
 	roster map[string]protocol.Presence
 }
 
@@ -84,7 +86,7 @@ func (h *Hub) handle(ws *websocket.Conn) {
 	}
 
 	c := &conn{clientID: hello.ClientID, sessionID: hello.SessionID, ws: ws}
-	h.attach(c, hello)
+	h.attach(c)
 	log.Printf("event=hello client=%s result=ok", hello.ClientID)
 
 	for {
@@ -105,57 +107,35 @@ func (h *Hub) handle(ws *websocket.Conn) {
 		switch frame.Type {
 		case "ping":
 			_ = c.write(protocol.Pong())
-		case "presence", "nick":
+		case "presence", "leave":
+			member, owned := protocol.MemberOf(c.clientID, frame.MemberID)
+			if !owned {
+				continue
+			}
 			frame.ClientID = c.clientID
-			h.push(inbound{from: c.clientID, frame: frame})
+			frame.MemberID = member
+			// A dropped presence frame is replaced by the next one; a dropped leave
+			// would strand a person on the plaza for good.
+			h.push(inbound{priority: frame.Type == "leave", from: c.clientID, frame: frame})
 		default:
 			// ignore unknown types so old clients do not get kicked
 		}
 	}
 }
 
-func (h *Hub) attach(c *conn, hello protocol.Envelope) {
+// A client introduces its own people through presence frames the moment it is welcomed,
+// so attaching only hands back the plaza as it stands. Seeding a person from the hello
+// would put a nameless extra on stage for every client that runs two agents.
+func (h *Hub) attach(c *conn) {
 	h.mu.Lock()
 	if old, ok := h.conns[c.clientID]; ok {
 		old.replaced = true
 		_ = old.ws.Close(websocket.StatusGoingAway, "replaced")
 	}
 	h.conns[c.clientID] = c
-	name := hello.DisplayName
-	if name == "" {
-		name = "agent"
-	}
-	kind := "waiting"
-	project := ""
-	if existing, ok := h.roster[c.clientID]; ok {
-		existing.DisplayName = name
-		if existing.Kind != "" {
-			kind = existing.Kind
-		}
-		project = existing.Project
-		h.roster[c.clientID] = existing
-	} else {
-		h.roster[c.clientID] = protocol.Presence{
-			ClientID:    c.clientID,
-			DisplayName: name,
-			Kind:        kind,
-			TS:          protocol.Now(),
-		}
-	}
 	snapshot := h.snapshotLocked()
 	h.mu.Unlock()
 	_ = c.write(protocol.Welcome(c.clientID, snapshot))
-	h.push(inbound{
-		priority: true,
-		from:     c.clientID,
-		frame: protocol.Envelope{
-			Type:        "presence",
-			ClientID:    c.clientID,
-			DisplayName: name,
-			Kind:        kind,
-			Project:     project,
-		},
-	})
 }
 
 func (h *Hub) detach(c *conn) {
@@ -166,13 +146,21 @@ func (h *Hub) detach(c *conn) {
 		return
 	}
 	delete(h.conns, c.clientID)
-	delete(h.roster, c.clientID)
+	gone := make([]string, 0, 2)
+	for id, p := range h.roster {
+		if p.ClientID == c.clientID {
+			delete(h.roster, id)
+			gone = append(gone, id)
+		}
+	}
 	h.mu.Unlock()
 	if c.replaced {
 		return
 	}
-	log.Printf("event=leave client=%s", c.clientID)
-	h.push(inbound{priority: true, from: c.clientID, frame: protocol.Leave(c.clientID)})
+	log.Printf("event=leave client=%s members=%d", c.clientID, len(gone))
+	for _, id := range gone {
+		h.push(inbound{priority: true, from: c.clientID, frame: protocol.Leave(c.clientID, id)})
+	}
 }
 
 func (h *Hub) push(msg inbound) {
@@ -196,9 +184,13 @@ func (h *Hub) drain() {
 func (h *Hub) apply(msg inbound) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
+	member := msg.frame.MemberID
+	if member == "" {
+		member = msg.from
+	}
 	switch msg.frame.Type {
 	case "presence":
-		prev := h.roster[msg.from]
+		prev := h.roster[member]
 		name := msg.frame.DisplayName
 		if name == "" {
 			name = prev.DisplayName
@@ -212,29 +204,18 @@ func (h *Hub) apply(msg inbound) {
 		}
 		p := protocol.Presence{
 			ClientID:    msg.from,
+			MemberID:    member,
 			DisplayName: name,
 			Kind:        kind,
 			Project:     msg.frame.Project,
 			TS:          protocol.Now(),
 		}
-		h.roster[msg.from] = p
-		log.Printf("event=presence client=%s kind=%s project=%s", msg.from, p.Kind, p.Project)
+		h.roster[member] = p
+		log.Printf("event=presence member=%s kind=%s project=%s", member, p.Kind, p.Project)
 		h.broadcastLocked(protocol.PresenceFrame(p))
-	case "nick":
-		prev, ok := h.roster[msg.from]
-		if !ok {
-			return
-		}
-		if msg.frame.DisplayName != "" {
-			prev.DisplayName = msg.frame.DisplayName
-		}
-		prev.TS = protocol.Now()
-		h.roster[msg.from] = prev
-		log.Printf("event=nick client=%s", msg.from)
-		h.broadcastLocked(protocol.PresenceFrame(prev))
 	case "leave":
-		delete(h.roster, msg.from)
-		h.broadcastLocked(protocol.Leave(msg.from))
+		delete(h.roster, member)
+		h.broadcastLocked(protocol.Leave(msg.from, member))
 	}
 }
 
@@ -285,8 +266,16 @@ func (h *Hub) tokenOK(got string) bool {
 	return subtle.ConstantTimeCompare([]byte(got), []byte(h.token)) == 1
 }
 
+// Count is connections, Members is people: a client running two coding agents is one of
+// the former and two of the latter.
 func (h *Hub) Count() int {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	return len(h.conns)
+}
+
+func (h *Hub) Members() int {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	return len(h.roster)
 }

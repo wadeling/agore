@@ -25,11 +25,14 @@ ids = {name: nid(i + 1) for i, name in enumerate([
     "GROUP_SOURCES",
     "GROUP_CORE",
     "GROUP_CORE_CURSOR",
+    "GROUP_CORE_INGEST",
+    "GROUP_CORE_OPENCODE",
     "GROUP_CORE_STORE",
     "GROUP_CORE_PLAZA",
     "GROUP_PLAZA",
     "GROUP_RESOURCES",
     "GROUP_HOOKS",
+    "GROUP_PLUGINS",
     "GROUP_TESTS",
     "GROUP_TEST_SOURCES",
     "GROUP_FIXTURES",
@@ -92,10 +95,12 @@ core_files = [
     "Sources/AgoreCore/Models.swift",
     "Sources/AgoreCore/PlazaTheme.swift",
     "Sources/AgoreCore/ActivityMapper.swift",
-    "Sources/AgoreCore/Cursor/HookPayload.swift",
-    "Sources/AgoreCore/Cursor/HookIngestServer.swift",
+    "Sources/AgoreCore/AgentBridges.swift",
+    "Sources/AgoreCore/Ingest/HookPayload.swift",
+    "Sources/AgoreCore/Ingest/HookIngestServer.swift",
     "Sources/AgoreCore/Cursor/HookInstaller.swift",
     "Sources/AgoreCore/Cursor/CursorTranscriptParser.swift",
+    "Sources/AgoreCore/Opencode/OpencodePluginInstaller.swift",
     "Sources/AgoreCore/Store/SQLiteStore.swift",
     "Sources/AgoreCore/Store/PresenceStore.swift",
     "Sources/AgoreCore/Plaza/Protocol.swift",
@@ -127,13 +132,18 @@ test_files = [
     "Tests/AgoreCoreTests/ActivityMapperTests.swift",
     "Tests/AgoreCoreTests/CursorTranscriptParserTests.swift",
     "Tests/AgoreCoreTests/HookInstallerTests.swift",
+    "Tests/AgoreCoreTests/OpencodePluginInstallerTests.swift",
     "Tests/AgoreCoreTests/HookPayloadTests.swift",
     "Tests/AgoreCoreTests/PresenceStoreTests.swift",
     "Tests/AgoreCoreTests/PlazaProtocolTests.swift",
 ]
-resource_files = [
-    "Resources/hooks/agore-forward.sh",
-]
+# One group per Resources subfolder, each installed into a different agent's config.
+resource_groups = {
+    "GROUP_HOOKS": ("hooks", ["Resources/hooks/agore-forward.sh"]),
+    "GROUP_PLUGINS": ("plugins", ["Resources/plugins/agore.js"]),
+}
+resource_files = [path for _, paths in resource_groups.values() for path in paths]
+resource_types = {".sh": "text.script.sh", ".js": "sourcecode.javascript"}
 plist = "Apps/Agore/Info.plist"
 fixture = "Tests/AgoreCoreTests/Fixtures/sample.jsonl"
 
@@ -228,7 +238,10 @@ for path in core_files + plaza_files + app_files + test_files:
     name = Path(path).name
     o(f"\t\t{file_ids[path]} /* {name} */ = {{isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = {name}; sourceTree = \"<group>\"; }};")
 o(f"\t\t{file_ids[plist]} /* Info.plist */ = {{isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = \"<group>\"; }};")
-o(f"\t\t{file_ids[resource_files[0]]} /* agore-forward.sh */ = {{isa = PBXFileReference; lastKnownFileType = text.script.sh; path = \"agore-forward.sh\"; sourceTree = \"<group>\"; }};")
+for path in resource_files:
+    name = Path(path).name
+    kind = resource_types[Path(path).suffix]
+    o(f"\t\t{file_ids[path]} /* {name} */ = {{isa = PBXFileReference; lastKnownFileType = {kind}; path = \"{name}\"; sourceTree = \"<group>\"; }};")
 o(f"\t\t{file_ids[fixture]} /* sample.jsonl */ = {{isa = PBXFileReference; lastKnownFileType = text; path = sample.jsonl; sourceTree = \"<group>\"; }};")
 o(f"\t\t{ids['ASSETS_CATALOG']} /* Assets.xcassets */ = {{isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = \"<group>\"; }};")
 o("/* End PBXFileReference section */")
@@ -344,40 +357,29 @@ o("\t\t\tisa = PBXGroup;")
 o("\t\t\tchildren = (")
 for path in [p for p in core_files if p.count("/") == 2]:
     o(f"\t\t\t\t{file_ids[path]} /* {Path(path).name} */,")
-o(f"\t\t\t\t{ids['GROUP_CORE_CURSOR']} /* Cursor */,")
-o(f"\t\t\t\t{ids['GROUP_CORE_STORE']} /* Store */,")
-o(f"\t\t\t\t{ids['GROUP_CORE_PLAZA']} /* Plaza */,")
+core_groups = [
+    ("GROUP_CORE_INGEST", "Ingest"),
+    ("GROUP_CORE_CURSOR", "Cursor"),
+    ("GROUP_CORE_OPENCODE", "Opencode"),
+    ("GROUP_CORE_STORE", "Store"),
+    ("GROUP_CORE_PLAZA", "Plaza"),
+]
+for key, folder in core_groups:
+    o(f"\t\t\t\t{ids[key]} /* {folder} */,")
 o("\t\t\t);")
 o("\t\t\tpath = AgoreCore;")
 o("\t\t\tsourceTree = \"<group>\";")
 o("\t\t};")
-o(f"\t\t{ids['GROUP_CORE_CURSOR']} /* Cursor */ = {{")
-o("\t\t\tisa = PBXGroup;")
-o("\t\t\tchildren = (")
-for path in [p for p in core_files if "/Cursor/" in p]:
-    o(f"\t\t\t\t{file_ids[path]} /* {Path(path).name} */,")
-o("\t\t\t);")
-o("\t\t\tpath = Cursor;")
-o("\t\t\tsourceTree = \"<group>\";")
-o("\t\t};")
-o(f"\t\t{ids['GROUP_CORE_STORE']} /* Store */ = {{")
-o("\t\t\tisa = PBXGroup;")
-o("\t\t\tchildren = (")
-for path in [p for p in core_files if "/Store/" in p]:
-    o(f"\t\t\t\t{file_ids[path]} /* {Path(path).name} */,")
-o("\t\t\t);")
-o("\t\t\tpath = Store;")
-o("\t\t\tsourceTree = \"<group>\";")
-o("\t\t};")
-o(f"\t\t{ids['GROUP_CORE_PLAZA']} /* Plaza */ = {{")
-o("\t\t\tisa = PBXGroup;")
-o("\t\t\tchildren = (")
-for path in [p for p in core_files if "/Plaza/" in p]:
-    o(f"\t\t\t\t{file_ids[path]} /* {Path(path).name} */,")
-o("\t\t\t);")
-o("\t\t\tpath = Plaza;")
-o("\t\t\tsourceTree = \"<group>\";")
-o("\t\t};")
+for key, folder in core_groups:
+    o(f"\t\t{ids[key]} /* {folder} */ = {{")
+    o("\t\t\tisa = PBXGroup;")
+    o("\t\t\tchildren = (")
+    for path in [p for p in core_files if f"/{folder}/" in p]:
+        o(f"\t\t\t\t{file_ids[path]} /* {Path(path).name} */,")
+    o("\t\t\t);")
+    o(f"\t\t\tpath = {folder};")
+    o("\t\t\tsourceTree = \"<group>\";")
+    o("\t\t};")
 o(f"\t\t{ids['GROUP_PLAZA']} /* AgorePlaza */ = {{")
 o("\t\t\tisa = PBXGroup;")
 o("\t\t\tchildren = (")
@@ -390,19 +392,22 @@ o("\t\t};")
 o(f"\t\t{ids['GROUP_RESOURCES']} /* Resources */ = {{")
 o("\t\t\tisa = PBXGroup;")
 o("\t\t\tchildren = (")
-o(f"\t\t\t\t{ids['GROUP_HOOKS']} /* hooks */,")
+for key, (folder, _) in resource_groups.items():
+    o(f"\t\t\t\t{ids[key]} /* {folder} */,")
 o("\t\t\t);")
 o("\t\t\tpath = Resources;")
 o("\t\t\tsourceTree = \"<group>\";")
 o("\t\t};")
-o(f"\t\t{ids['GROUP_HOOKS']} /* hooks */ = {{")
-o("\t\t\tisa = PBXGroup;")
-o("\t\t\tchildren = (")
-o(f"\t\t\t\t{file_ids[resource_files[0]]} /* agore-forward.sh */,")
-o("\t\t\t);")
-o("\t\t\tpath = hooks;")
-o("\t\t\tsourceTree = \"<group>\";")
-o("\t\t};")
+for key, (folder, paths) in resource_groups.items():
+    o(f"\t\t{ids[key]} /* {folder} */ = {{")
+    o("\t\t\tisa = PBXGroup;")
+    o("\t\t\tchildren = (")
+    for path in paths:
+        o(f"\t\t\t\t{file_ids[path]} /* {Path(path).name} */,")
+    o("\t\t\t);")
+    o(f"\t\t\tpath = {folder};")
+    o("\t\t\tsourceTree = \"<group>\";")
+    o("\t\t};")
 o(f"\t\t{ids['GROUP_TESTS']} /* Tests */ = {{")
 o("\t\t\tisa = PBXGroup;")
 o("\t\t\tchildren = (")
@@ -495,7 +500,8 @@ o(f"\t\t{ids['APP_RESOURCES']} /* Resources */ = {{")
 o("\t\t\tisa = PBXResourcesBuildPhase;")
 o("\t\t\tbuildActionMask = 2147483647;")
 o("\t\t\tfiles = (")
-o(f"\t\t\t\t{build_ids[resource_files[0]]} /* agore-forward.sh in Resources */,")
+for path in resource_files:
+    o(f"\t\t\t\t{build_ids[path]} /* {Path(path).name} in Resources */,")
 o(f"\t\t\t\t{ids['BF_ASSETS']} /* Assets.xcassets in Resources */,")
 o("\t\t\t);")
 o("\t\t\trunOnlyForDeploymentPostprocessing = 0;")

@@ -43,12 +43,15 @@ public enum PlazaPeriod: Hashable, Sendable {
     }
 }
 
+/// One pixel person on the plaza. A member is a client-and-agent pair rather than a whole
+/// Mac, so running Cursor and opencode side by side puts two of them on stage.
 public struct PlazaMember: Equatable, Identifiable, Sendable {
     public var id: String
     public var displayName: String
     public var kind: ActivityKind
     public var project: String
     public var lastSeen: Date
+    public var provider: String
     public var isLocal: Bool
 
     public init(
@@ -57,6 +60,7 @@ public struct PlazaMember: Equatable, Identifiable, Sendable {
         kind: ActivityKind,
         project: String = "",
         lastSeen: Date = Date(),
+        provider: String = "plaza",
         isLocal: Bool = false
     ) {
         self.id = id
@@ -64,15 +68,46 @@ public struct PlazaMember: Equatable, Identifiable, Sendable {
         self.kind = kind
         self.project = project
         self.lastSeen = lastSeen
+        self.provider = provider
         self.isLocal = isLocal
+    }
+
+    /// Stable across restarts and distinct per agent, and prefixed with the client id so
+    /// the plaza server can tell at a glance which connection a member belongs to.
+    public static func id(client: String, provider: AgentProvider) -> String {
+        "\(client):\(provider.rawValue)"
+    }
+
+    /// The agent this person stands for, where it is one Agore knows how to name.
+    public var agent: AgentProvider? {
+        AgentProvider(rawValue: provider)
+    }
+
+    /// What stands under the pixel person, and it has to stay narrow: a name much wider
+    /// than the twelve pixels it belongs to runs into the neighbours' names. So the agent
+    /// is a two-letter tag and a long nickname is cut — `wade-oc`, `lingximosm…-cs`. The
+    /// whole of it is a hover away.
+    public var label: String {
+        let nickname = displayName.count > AgoreConstants.nicknameCeiling
+            ? displayName.prefix(AgoreConstants.nicknameCeiling) + "…"
+            : displayName
+        guard let agent else { return String(nickname) }
+        return "\(nickname)-\(agent.shortName)"
+    }
+
+    /// Nothing abbreviated away, for a hover.
+    public var fullLabel: String {
+        guard let agent else { return displayName }
+        return "\(displayName)-\(agent.rawValue)"
     }
 
     public func asSession() -> AgentSession {
         AgentSession(
             id: id,
-            provider: isLocal ? AgoreConstants.providerCursor : "plaza",
+            provider: provider,
             projectSlug: project,
-            displayName: displayName,
+            displayName: label,
+            fullName: fullLabel,
             kind: kind,
             lastSeen: lastSeen,
             source: isLocal ? .hook : .plaza
@@ -91,6 +126,7 @@ public struct PresenceEvent: Equatable, Sendable {
     /// Pairs a tool call's opening hook with its closing one. Only the generic
     /// preToolUse/postToolUse family carries it.
     public var toolUseId: String?
+    public var provider: String
     public var source: PresenceSource
 
     public init(
@@ -102,6 +138,7 @@ public struct PresenceEvent: Equatable, Sendable {
         occurredAt: Date = Date(),
         hookEventName: String? = nil,
         toolUseId: String? = nil,
+        provider: String = AgoreConstants.providerCursor,
         source: PresenceSource
     ) {
         self.conversationId = conversationId
@@ -112,6 +149,7 @@ public struct PresenceEvent: Equatable, Sendable {
         self.occurredAt = occurredAt
         self.hookEventName = hookEventName
         self.toolUseId = toolUseId
+        self.provider = provider
         self.source = source
     }
 
@@ -124,6 +162,10 @@ public struct AgentSession: Equatable, Identifiable, Sendable {
     public var provider: String
     public var projectSlug: String
     public var displayName: String
+    /// The same name with nothing abbreviated away, shown when the pointer rests on this
+    /// one. Equal to `displayName` unless the name had to be cut down to fit under a
+    /// twelve-pixel figure.
+    public var fullName: String
     public var kind: ActivityKind
     public var toolName: String?
     public var lastSeen: Date
@@ -135,6 +177,7 @@ public struct AgentSession: Equatable, Identifiable, Sendable {
         provider: String = "cursor",
         projectSlug: String,
         displayName: String,
+        fullName: String? = nil,
         kind: ActivityKind,
         toolName: String? = nil,
         lastSeen: Date,
@@ -145,6 +188,7 @@ public struct AgentSession: Equatable, Identifiable, Sendable {
         self.provider = provider
         self.projectSlug = projectSlug
         self.displayName = displayName
+        self.fullName = fullName ?? displayName
         self.kind = kind
         self.toolName = toolName
         self.lastSeen = lastSeen
@@ -194,6 +238,40 @@ public enum AgorePaths {
             .appendingPathComponent("projects", isDirectory: true)
     }
 
+    public static var cursorRoot: URL {
+        FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent(".cursor", isDirectory: true)
+    }
+
+    /// A menu bar app inherits none of the shell's environment, so `XDG_CONFIG_HOME` is
+    /// almost always absent here; it is honoured anyway for the people who set it in
+    /// their launch agent.
+    public static var opencodeConfigDirectory: URL {
+        let base = ProcessInfo.processInfo.environment["XDG_CONFIG_HOME"]
+        let root = base?.isEmpty == false
+            ? URL(fileURLWithPath: base!, isDirectory: true)
+            : FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".config", isDirectory: true)
+        return root.appendingPathComponent("opencode", isDirectory: true)
+    }
+
+    public static var opencodePluginsDirectory: URL {
+        opencodeConfigDirectory.appendingPathComponent("plugins", isDirectory: true)
+    }
+
+    /// Older opencode builds scanned a singular `plugin/`. Agore writes there too, but
+    /// only when the directory already exists, rather than leaving a stray folder in the
+    /// config of everyone on a current build.
+    public static var opencodeLegacyPluginsDirectory: URL {
+        opencodeConfigDirectory.appendingPathComponent("plugin", isDirectory: true)
+    }
+
+    public static var opencodeDataDirectory: URL {
+        FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent(".local", isDirectory: true)
+            .appendingPathComponent("share", isDirectory: true)
+            .appendingPathComponent("opencode", isDirectory: true)
+    }
+
     public static func ensureApplicationSupport() throws {
         try FileManager.default.createDirectory(at: applicationSupport, withIntermediateDirectories: true)
     }
@@ -215,7 +293,10 @@ public enum AgoreConstants {
     public static let displayNameKey = "AgoreDisplayName"
     public static let themeKey = "AgoreTheme"
     public static let defaultPlazaURL = "wss://agore.bytebar.dev/v1/plaza"
-    public static let plazaProtocolVersion = 1
+    /// Version 2 added member_id: one client stands on the plaza as a person per agent.
+    public static let plazaProtocolVersion = 2
+    /// Letters of a nickname that fit under a pixel person before it has to be cut.
+    public static let nicknameCeiling = 10
     public static let plazaHeartbeat: TimeInterval = 25
     public static let plazaDebounce: TimeInterval = 0.4
     /// Silence for this long counts as the agent having gone to sleep, unless a tool
@@ -229,5 +310,11 @@ public enum AgoreConstants {
     public static let departureGrace: TimeInterval = 6
     public static let hookCommand = "./hooks/agore-forward.sh"
     public static let hookMarker = "agore-forward"
-    public static let providerCursor = "cursor"
+    /// Bumped whenever `Resources/plugins/agore.js` changes, so an opencode config
+    /// carrying an older copy is reinstalled instead of being left as it is.
+    public static let opencodePluginVersion = 1
+    public static let opencodePluginFileName = "agore.js"
+    public static var opencodePluginMarker: String { "agore-plugin v\(opencodePluginVersion)" }
+    public static let providerCursor = AgentProvider.cursor.rawValue
+    public static let providerOpencode = AgentProvider.opencode.rawValue
 }

@@ -10,6 +10,7 @@ public final class PlazaScene: SKScene {
     private var leaving: [PlazaActor] = []
     private var cats: [PlazaCat] = []
     private var slots: [String: Int] = [:]
+    private var hovered: String?
     private var tickAccum: TimeInterval = 0
     private var lastTime: TimeInterval = 0
     private var ground: SKSpriteNode?
@@ -71,6 +72,7 @@ public final class PlazaScene: SKScene {
         actors.removeAll()
         leaving.removeAll()
         slots.removeAll()
+        hovered = nil
         // A scene that has not been presented yet has no scenery to replace; the first
         // move into a view paints the new theme instead.
         guard let ground else { return }
@@ -110,6 +112,8 @@ public final class PlazaScene: SKScene {
         addChild(node)
     }
 
+    /// Strays, not agents. On the shore the agents are cats themselves, so the geometry
+    /// hands back no spots there and the only cats on the sand have names under them.
     private func addCats() {
         for (index, spot) in geometry.catSpots.enumerated() {
             let cat = PlazaCat(variant: index, home: spot, geometry: geometry)
@@ -126,6 +130,7 @@ public final class PlazaScene: SKScene {
         for (id, actor) in actors where !incomingIds.contains(id) {
             actors.removeValue(forKey: id)
             slots.removeValue(forKey: id)
+            if hovered == id { hovered = nil }
             leaving.append(actor)
             actor.leave(anchors: anchors) { [weak self] in
                 self?.leaving.removeAll { $0 === actor }
@@ -138,11 +143,39 @@ public final class PlazaScene: SKScene {
                 actor.apply(session, anchors: anchors, slot: slot)
             } else {
                 let start = anchors.spawn()
-                let actor = PlazaActor(session: session, position: start)
+                let actor = PlazaActor(session: session, position: start, theme: theme, geometry: geometry)
                 actors[session.id] = actor
                 addChild(actor.node)
                 actor.apply(session, anchors: anchors, slot: slot)
             }
+        }
+    }
+
+    /// The pointer is read off the screen rather than waited for as an event: the plaza is
+    /// usually a panel of an app that is not frontmost, and mouse-moved events reach it
+    /// only once something has brought it forward.
+    private func refreshHover() {
+        guard let view = view, let window = view.window, window.isVisible else {
+            hover(nil)
+            return
+        }
+        let inView = view.convert(window.convertPoint(fromScreen: NSEvent.mouseLocation), from: nil)
+        hover(view.bounds.contains(inView) ? convertPoint(fromView: inView) : nil)
+    }
+
+    /// Spells out the name of whoever the pointer is resting on, and shortens everyone
+    /// else's back. Pass nil when the pointer is off the plaza.
+    private func hover(_ point: CGPoint?) {
+        // Topmost first, so the one drawn over the others is the one that answers.
+        let found = point.flatMap { point in
+            actors.values
+                .filter { $0.contains(point) }
+                .max { $0.node.zPosition < $1.node.zPosition }
+        }
+        guard found?.id != hovered else { return }
+        hovered = found?.id
+        for actor in actors.values {
+            actor.setHovered(actor === found)
         }
     }
 
@@ -167,6 +200,7 @@ public final class PlazaScene: SKScene {
         tickAccum += dt
         guard tickAccum >= 0.18 else { return }
         tickAccum = 0
+        refreshHover()
         for actor in actors.values {
             actor.tick(anchors: anchors)
         }

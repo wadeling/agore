@@ -2,27 +2,31 @@ package protocol
 
 import (
 	"encoding/json"
+	"strings"
 	"time"
 )
 
-const Version = 1
+// Version 2 added member_id: one client owns a person per coding agent it runs.
+const Version = 2
 
 type Envelope struct {
-	V           int         `json:"v"`
-	Type        string      `json:"type"`
-	TS          int64       `json:"ts"`
-	ClientID    string      `json:"client_id,omitempty"`
-	SessionID   string      `json:"session_id,omitempty"`
-	DisplayName string      `json:"display_name,omitempty"`
-	Token       string      `json:"token,omitempty"`
-	Kind        string      `json:"kind,omitempty"`
-	Project     string      `json:"project,omitempty"`
-	Snapshot    []Presence  `json:"snapshot,omitempty"`
-	Code        string      `json:"code,omitempty"`
+	V           int        `json:"v"`
+	Type        string     `json:"type"`
+	TS          int64      `json:"ts"`
+	ClientID    string     `json:"client_id,omitempty"`
+	MemberID    string     `json:"member_id,omitempty"`
+	SessionID   string     `json:"session_id,omitempty"`
+	DisplayName string     `json:"display_name,omitempty"`
+	Token       string     `json:"token,omitempty"`
+	Kind        string     `json:"kind,omitempty"`
+	Project     string     `json:"project,omitempty"`
+	Snapshot    []Presence `json:"snapshot,omitempty"`
+	Code        string     `json:"code,omitempty"`
 }
 
 type Presence struct {
 	ClientID    string `json:"client_id"`
+	MemberID    string `json:"member_id"`
 	DisplayName string `json:"display_name"`
 	Kind        string `json:"kind"`
 	Project     string `json:"project"`
@@ -61,14 +65,26 @@ func PresenceFrame(p Presence) Envelope {
 		Type:        "presence",
 		TS:          p.TS,
 		ClientID:    p.ClientID,
+		MemberID:    p.MemberID,
 		DisplayName: p.DisplayName,
 		Kind:        p.Kind,
 		Project:     p.Project,
 	}
 }
 
-func Leave(clientID string) Envelope {
-	return Envelope{V: Version, Type: "leave", TS: Now(), ClientID: clientID}
+func Leave(clientID, memberID string) Envelope {
+	return Envelope{V: Version, Type: "leave", TS: Now(), ClientID: clientID, MemberID: memberID}
+}
+
+// MemberOf reports which person a frame is about, and whether the connection that sent it
+// is allowed to speak for them. A client owns the member named after itself and any member
+// prefixed with its own id, and nothing else — otherwise one client could rename or evict
+// another's people.
+func MemberOf(clientID, memberID string) (string, bool) {
+	if memberID == "" || memberID == clientID {
+		return clientID, true
+	}
+	return memberID, strings.HasPrefix(memberID, clientID+":")
 }
 
 func Pong() Envelope {

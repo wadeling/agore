@@ -9,6 +9,10 @@ final class PlazaActor {
     let isSubagent: Bool
     private let hashValue: Int
     private let restingAlpha: CGFloat
+    private let theme: PlazaTheme
+    private let geometry: PlazaGeometry
+    private var names: (short: String, full: String)
+    private var isHovered = false
     private var kind: ActivityKind
     private var frame = 0
     private var target: CGPoint
@@ -16,37 +20,50 @@ final class PlazaActor {
     private let nap: SKNode
     private var isSleeping = false
 
-    init(session: AgentSession, position: CGPoint) {
+    init(session: AgentSession, position: CGPoint, theme: PlazaTheme, geometry: PlazaGeometry) {
         self.id = session.id
         self.isSubagent = session.isSubagent
         self.kind = session.kind
         self.hashValue = session.id.hashValue
         self.target = position
+        self.theme = theme
+        self.geometry = geometry
+        self.names = (session.displayName, session.fullName)
         self.restingAlpha = session.source == .demo ? 0.55 : 1
-        let texture = PixelArt.character(hash: hashValue, kind: session.kind, frame: 0, small: session.isSubagent)
+        let size = PixelArt.actorSize(theme: theme, small: session.isSubagent)
+        let texture = PixelArt.actorBody(
+            theme: theme,
+            hash: hashValue,
+            kind: session.kind,
+            moving: false,
+            frame: 0,
+            small: session.isSubagent
+        )
         node = SKSpriteNode(texture: texture)
         node.texture?.filteringMode = .nearest
         // Blanking the texture is how the standing pose gets out of the sleeper's way,
         // and a nil-textured sprite falls back to drawing this colour.
         node.color = .clear
-        node.size = session.isSubagent ? CGSize(width: 12, height: 16) : CGSize(width: 16, height: 20)
+        node.size = size
         node.position = position
         node.alpha = restingAlpha
         node.zPosition = 10 + (session.isSubagent ? 1 : 0)
 
         label = SKLabelNode(fontNamed: "Menlo")
-        label.fontSize = 8
+        // The world is drawn two or three times over, so the name is measured against the
+        // twelve-pixel figure it belongs to rather than against the screen.
+        label.fontSize = 6
         label.fontColor = NSColor(calibratedWhite: 0.15, alpha: 1)
         label.verticalAlignmentMode = .top
         label.horizontalAlignmentMode = .center
-        label.position = CGPoint(x: 0, y: -12)
+        label.position = CGPoint(x: 0, y: -(size.height / 2 + 2))
         label.text = session.displayName
         label.zPosition = 2
         node.addChild(label)
 
         bubble = SKSpriteNode(texture: PixelArt.bubble())
         bubble.size = CGSize(width: 14, height: 12)
-        bubble.position = CGPoint(x: 10, y: 12)
+        bubble.position = CGPoint(x: size.width / 2 + 2, y: size.height / 2 + 2)
         bubble.zPosition = 3
         bubble.isHidden = session.kind != .waiting
         bubble.texture?.filteringMode = .nearest
@@ -56,7 +73,12 @@ final class PlazaActor {
         ])))
         node.addChild(bubble)
 
-        nap = Self.makeNap(hash: hashValue, small: session.isSubagent, feetY: -node.size.height / 2)
+        nap = Self.makeNap(
+            theme: theme,
+            hash: hashValue,
+            small: session.isSubagent,
+            feetY: -size.height / 2
+        )
         nap.isHidden = true
         node.addChild(nap)
     }
@@ -64,27 +86,33 @@ final class PlazaActor {
     /// The lying sprite is a sibling of the standing one rather than a swapped texture:
     /// the node's own position is what the walk actions steer, so the body has to lie
     /// down around it instead of moving it down onto the ground.
-    private static func makeNap(hash: Int, small: Bool, feetY: CGFloat) -> SKNode {
+    private static func makeNap(theme: PlazaTheme, hash: Int, small: Bool, feetY: CGFloat) -> SKNode {
         let root = SKNode()
         let scale: CGFloat = small ? 0.75 : 1
-        let width = CGFloat(PixelArt.sleeperWidth) * scale
-        let height = CGFloat(PixelArt.sleeperHeight) * scale
+        let base = PixelArt.actorSleeperSize(theme: theme)
+        let width = base.width * scale
+        let height = base.height * scale
         root.position = CGPoint(x: 0, y: feetY + height / 2)
         root.zPosition = 1
 
-        let body = SKSpriteNode(texture: PixelArt.sleeper(hash: hash, frame: 0))
+        let body = SKSpriteNode(texture: PixelArt.actorSleeper(theme: theme, hash: hash, frame: 0))
         body.size = CGSize(width: width, height: height)
         body.texture?.filteringMode = .nearest
         body.run(.repeatForever(.animate(
-            with: (0..<PixelArt.sleeperFrames).map { PixelArt.sleeper(hash: hash, frame: $0) },
+            with: (0..<PixelArt.sleeperFrames).map {
+                PixelArt.actorSleeper(theme: theme, hash: hash, frame: $0)
+            },
             timePerFrame: 0.9,
             resize: false,
             restore: true
         )))
         root.addChild(body)
 
-        // The head lies at the left end of the sprite, so the Z's rise from there.
-        let headX = -width / 2 + 5 * scale
+        // A sleeper's head is at the left end for a person and the right for a curled cat,
+        // and the Z's rise from whichever end that is.
+        let headX = theme == .seaside
+            ? width / 2 - 4 * scale
+            : -width / 2 + 5 * scale
         for index in 0..<2 {
             let z = SKSpriteNode(texture: PixelArt.sleepZ())
             z.size = CGSize(width: 6, height: 6)
@@ -107,36 +135,77 @@ final class PlazaActor {
 
     func apply(_ session: AgentSession, anchors: PlazaAnchors, slot: Int) {
         kind = session.kind
-        // Assigning either one re-rasterises the label, and apply() runs on every refresh.
-        if label.text != session.displayName {
-            label.text = session.displayName
+        names = (session.displayName, session.fullName)
+        // Assigning it re-rasterises the label, and apply() runs on every refresh.
+        if label.text != wantedName {
+            label.text = wantedName
         }
         let hidesBubble = session.kind != .waiting
         if bubble.isHidden != hidesBubble {
             bubble.isHidden = hidesBubble
         }
         // An idle agent has not left, it is just resting: dimming it says so without
-        // taking the pixel person off the plaza.
+        // taking anyone off the plaza.
         node.alpha = session.kind == .idle ? restingAlpha * 0.75 : restingAlpha
         target = anchors.spot(for: session, slot: slot)
         let distance = hypot(target.x - node.position.x, target.y - node.position.y)
         if distance > 4 {
             node.removeAction(forKey: "walk")
+            face(towards: target)
             let duration = min(2.8, TimeInterval(distance / 40))
             node.run(.move(to: target, duration: duration), withKey: "walk")
         }
         setSleeping(wantsSleep)
+        keepNameInFrame()
+    }
+
+    private var wantedName: String {
+        isHovered ? names.full : names.short
+    }
+
+    /// Whether the pointer is on this one. The name it wears is cut down to keep the plaza
+    /// readable, so resting on a person spells it out — and lifts them over the neighbours
+    /// whose names the longer one now overlaps.
+    func contains(_ point: CGPoint) -> Bool {
+        node.frame.insetBy(dx: -2, dy: -2).contains(point)
+            || label.frame.offsetBy(dx: node.position.x, dy: node.position.y).contains(point)
+    }
+
+    func setHovered(_ hovered: Bool) {
+        guard hovered != isHovered else { return }
+        isHovered = hovered
+        label.text = wantedName
+        node.zPosition = (isSubagent ? 11 : 10) + (hovered ? 10 : 0)
+        keepNameInFrame()
+    }
+
+    /// A name is far wider than the person wearing it, and one that says which agent it is
+    /// wider still, so the people at either end of the plaza would have half of theirs cut
+    /// off by the frame. The name slides along rather than the person moving in.
+    private func keepNameInFrame() {
+        let margin = label.frame.width / 2 + 1
+        let low = margin - node.position.x
+        let high = CGFloat(geometry.worldWidth) - margin - node.position.x
+        // A name wider than the whole plaza has nowhere to go; centre it and let it spill.
+        let offset = low > high ? (low + high) / 2 : min(max(0, low), high)
+        // Turning around mirrors the whole node, so the offset has to be mirrored back.
+        let local = offset * node.xScale
+        if abs(label.position.x - local) > 0.5 {
+            label.position.x = local
+        }
     }
 
     /// Leaving is losing your place on the roster, not going quiet: the plaza calls this
-    /// only once presence is actually gone, and the person walks out through a gate.
+    /// only once presence is actually gone, and the actor walks out through a gate.
     func leave(anchors: PlazaAnchors, completion: @escaping () -> Void) {
         guard !isLeaving else { return }
         isLeaving = true
         setSleeping(false)
         node.removeAction(forKey: "walk")
+        let gate = anchors.exit(near: node.position)
+        face(towards: gate)
         node.run(.sequence([
-            .move(to: anchors.exit(near: node.position), duration: 1.2),
+            .move(to: gate, duration: 1.2),
             .fadeOut(withDuration: 0.3),
         ])) { [node] in
             node.removeFromParent()
@@ -156,18 +225,28 @@ final class PlazaActor {
         guard sleeping != isSleeping else { return }
         isSleeping = sleeping
         nap.isHidden = !sleeping
-        node.texture = sleeping ? nil : standingTexture
+        node.texture = sleeping ? nil : bodyTexture
     }
 
-    private var standingTexture: SKTexture {
+    /// A cat is drawn in profile and has to turn around to walk the other way, while a
+    /// person is drawn face-on and reads the same either way. Turning mirrors the whole
+    /// node, so the name mirrors itself back to stay readable.
+    private func face(towards point: CGPoint) {
+        guard theme == .seaside, point.x != node.position.x else { return }
+        let facing: CGFloat = point.x > node.position.x ? 1 : -1
+        guard node.xScale != facing else { return }
+        node.xScale = facing
+        label.xScale = facing
+    }
+
+    private var bodyTexture: SKTexture {
         let moving = node.action(forKey: "walk") != nil || isLeaving
             || kind == .running || kind == .thinking
-        // The idle sprite carries the walk cycle, so an agent on its way to bed borrows
-        // the waiting pose instead: standing and breathing rather than marching on the spot.
-        let visualKind: ActivityKind = kind == .idle ? (moving ? .idle : .waiting) : kind
-        return PixelArt.character(
+        return PixelArt.actorBody(
+            theme: theme,
             hash: hashValue,
-            kind: visualKind,
+            kind: kind,
+            moving: moving,
             frame: frame,
             small: isSubagent
         )
@@ -177,7 +256,7 @@ final class PlazaActor {
         frame = (frame + 1) % PixelArt.characterFrames
         setSleeping(wantsSleep)
         if !isSleeping {
-            let texture = standingTexture
+            let texture = bodyTexture
             if node.texture !== texture {
                 node.texture = texture
             }
@@ -187,8 +266,11 @@ final class PlazaActor {
                 x: node.position.x + CGFloat.random(in: -26...26),
                 y: node.position.y + CGFloat.random(in: anchors.geometry.isStrip ? -3...3 : -18...18)
             )
-            node.run(.move(to: anchors.walkable(wander), duration: 1.4), withKey: "walk")
+            let step = anchors.walkable(wander)
+            face(towards: step)
+            node.run(.move(to: step, duration: 1.4), withKey: "walk")
         }
+        keepNameInFrame()
     }
 }
 

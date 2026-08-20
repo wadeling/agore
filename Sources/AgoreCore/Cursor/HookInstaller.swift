@@ -39,18 +39,33 @@ public struct HookInstaller: Sendable {
 
     @discardableResult
     public func syncForwarder(from bundle: Bundle = .main) throws -> URL {
-        let fm = FileManager.default
-        try fm.createDirectory(at: hooksDirectory, withIntermediateDirectories: true)
         guard let source = bundle.url(forResource: "agore-forward", withExtension: "sh") else {
             throw InstallerError.forwarderMissing
         }
+        return try syncForwarder(source: source)
+    }
+
+    /// Reconciling is cheap and happens on a timer, so an unchanged script is left
+    /// exactly as it is: Cursor may be about to execute the very file we would be
+    /// replacing. When it does have to be written, it is written in one step.
+    @discardableResult
+    public func syncForwarder(source: URL) throws -> URL {
+        let fm = FileManager.default
         let destination = hooksDirectory.appendingPathComponent("agore-forward.sh")
-        if fm.fileExists(atPath: destination.path) {
-            try fm.removeItem(at: destination)
+        let script = try Data(contentsOf: source)
+        if (try? Data(contentsOf: destination)) == script, isExecutable(destination) {
+            return destination
         }
-        try fm.copyItem(at: source, to: destination)
+        try fm.createDirectory(at: hooksDirectory, withIntermediateDirectories: true)
+        try script.write(to: destination, options: .atomic)
         try fm.setAttributes([.posixPermissions: 0o755], ofItemAtPath: destination.path)
         return destination
+    }
+
+    private func isExecutable(_ url: URL) -> Bool {
+        guard let attributes = try? FileManager.default.attributesOfItem(atPath: url.path),
+              let mode = attributes[.posixPermissions] as? Int else { return false }
+        return mode & 0o111 != 0
     }
 
     /// Reconciles against the full event list rather than stopping at the first Agore

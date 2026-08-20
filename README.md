@@ -14,15 +14,18 @@ corner of your eye while you work.
 
 ## Status
 
-Cursor is the only agent provider so far. Each running Agore client is one pixel person.
-A Go plaza server can broadcast those people to every other client over WebSocket.
+Cursor and [opencode](https://opencode.ai) both walk onto the plaza, each as its own pixel
+person: one figure per client and agent, so a Mac running both shows two. A Go plaza server
+can broadcast those people to every other client over WebSocket.
 
 ## Requirements
 
 - macOS 14 or later
 - Xcode command line tools (`xcodebuild`)
-- [Cursor](https://cursor.com) with user hooks support, for live activity
-- Python 3 (ships with macOS) for the hook forwarder and the build scripts
+- At least one agent, for there to be anything to watch:
+  - [Cursor](https://cursor.com) with user hooks support
+  - [opencode](https://opencode.ai), which loads plugins from its config directory
+- Python 3 (ships with macOS) for the Cursor hook forwarder and the build scripts
 
 ## Getting started
 
@@ -32,111 +35,152 @@ make run       # (re)launch it
 make test      # run the unit tests
 ```
 
-On first launch Agore opens a small window so you can see it exists, and installs its
-Cursor hook into `~/.cursor/hooks.json`. Close the window and the app moves into the menu
-bar. Cursor needs to be restarted once for a freshly installed hook to take effect.
+On first launch Agore opens a small window so you can see it exists, and wires itself into
+whichever agents it finds on the Mac: a hook in `~/.cursor/hooks.json` for Cursor, a plugin
+in `~/.config/opencode/plugins/` for opencode. Close the window and the app moves into the
+menu bar. Both agents need to be restarted once for a freshly installed bridge to take
+effect, and an agent installed later gets picked up within half a minute.
+
+Agents Agore cannot find are left alone rather than having a config directory created for
+them. If yours lives somewhere unusual, install it by hand from **Agents** in the status
+item menu.
 
 ### Using it
 
 - **Left-click** the menu bar icon: show or hide the plaza
-- **Right-click** (or Control-click): **Style**, **Always on Top**, nickname, plaza token, show/hide, hooks, quit
+- **Right-click** (or Control-click): **Style**, **Always on Top**, nickname, plaza token, show/hide, **Agents**, quit
+- **Hover** a pixel person: their name spells itself out in full
 - **Drag** the strip anywhere; Agore remembers where you put it
 - With **Always on Top** enabled the plaza joins every Space, survives clicks elsewhere, and
   comes back automatically on the next launch
 
-The bar along the bottom shows how many people are on the plaza, what your own agent is up
-to, whether hooks are installed, and when the last event arrived.
+The bar along the bottom shows how many people are on the plaza (your own agents included,
+one each), what this Mac as a whole is up to, which agents are wired up
+(`cursor on · opencode off`), and when the last event arrived.
 
 ### Styles
 
 Two worlds, picked from **Style** in the status item menu or **View → Style** in the menu
 bar, and remembered across launches:
 
-| Style | The plaza is |
-| --- | --- |
-| Greek Agora | Marble paving under a colonnade, a fountain, olive trees, stone benches |
-| Sunny Seaside | A beach under a big sky, surf and a bay, palms, a parasol, beach towels |
+| Style | The plaza is | You are |
+| --- | --- | --- |
+| Greek Agora | Marble paving under a colonnade, a fountain, olive trees, stone benches | A pixel person, with a couple of stray cats loafing about |
+| Sunny Seaside | A beach under a big sky, surf and a bay, palms, a parasol, beach towels | A pixel cat, a different coat for each agent |
 
-Both keep the same daylight cycle, and both have a couple of pixel cats loafing about
-where nobody is walking. Switching styles repaints the plaza and everyone walks back in.
+Both keep the same daylight cycle and read the same activity; only the inhabitants change,
+so a cat sits, pads about and curls up asleep wherever a person would have stood, strolled
+and lain down. Switching styles repaints the plaza and everyone walks back in.
 
 ### What the pixel people are doing
 
 | On screen | Activity | Comes from |
 | --- | --- | --- |
-| Sitting with a scroll | reading | `Read`, `Grep`, `Glob`, `WebSearch`, … |
-| Scribbling | writing | `Write`, `StrReplace`, `ApplyPatch`, `afterFileEdit`, … |
-| Pacing the plaza | running | `Shell`, `Task`, MCP calls, `beforeShellExecution`, … |
-| Strolling, head down | thinking | `afterAgentThought`, anything unrecognised |
-| Standing with a bubble | waiting | `stop`, `sessionStart`, a user turn |
-| Resting on a bench, dimmed | idle | `sessionEnd`, or two minutes of silence with no tool call open |
+| Sitting with a scroll | reading | `Read`, `Grep`, `Glob`, `WebSearch`, opencode's `read`, `list`, … |
+| Scribbling | writing | `Write`, `StrReplace`, `afterFileEdit`, opencode's `edit`, `patch`, … |
+| Pacing the plaza | running | `Shell`, `Task`, MCP calls, `beforeShellExecution`, opencode's `bash`, … |
+| Strolling, head down | thinking | `afterAgentThought`, a finished tool call, anything unrecognised |
+| Standing with a bubble | waiting | `stop`, `sessionStart`, `session.created`, `permission.asked`, a user turn |
+| Asleep on a bench or towel, dimmed | idle | `sessionEnd`, `session.idle`, or two minutes of silence with no tool call open |
 | Walking out through a gate | gone | that client disconnected from the plaza |
 
-One pixel person per Agore client (one Cursor instance on one Mac), not per conversation.
-Yours is on the plaza from the moment Agore starts, resting until an agent wakes up.
-The name under the person is your nickname (default: this Mac's hostname). Local Cursor
-activity is folded into a single pose: running beats writing, which beats reading, and so
-on. Up to eight people hold distinct spots around the fountain; beyond that the plaza
-fills a second row.
+Tool names are matched case-insensitively, because Cursor spells them `Read` and opencode
+spells them `read`.
+
+One pixel person — or one cat — per client *and agent*, not per conversation: a Mac running
+Cursor and opencode side by side puts two of them on the plaza, named `wade-cs` and
+`wade-oc` after your nickname (default: this Mac's hostname) and which agent each one is.
+A name has to stay narrow enough to read the people either side of it, so the agent is a
+two-letter tag and a nickname over ten letters is cut: `wadelingsb…-cs`. **Hover** a person
+to see the whole of it, `wadelingsbigmac-cursor`. Each is on the plaza
+from the moment Agore is wired into that agent, resting until it wakes up. One agent's
+conversations and subagents still share a figure, folded into a single pose: running beats
+writing, which beats reading, and so on. Up to eight people hold distinct spots around the
+fountain; beyond that the plaza fills a second row.
 
 ## How it works
 
 ```
-Cursor agent
-   │  user hook (~/.cursor/hooks.json)
-   ▼
-agore-forward.sh ──POST──▶ 127.0.0.1:<random port>/events   (loopback only)
-                                    │
-                          ActivityMapper → PresenceStore (fold to 1 person)
-                                    │
-                    ┌───────────────┴───────────────┐
-                    ▼                               ▼
-              SpriteKit plaza              WebSocket hello/presence
-                                                  │
-                                           Go plaza server :8081
-                                                  │
-                                           broadcast to all clients
+Cursor agent                      opencode agent
+   │  user hook                      │  plugin
+   │  (~/.cursor/hooks.json)         │  (~/.config/opencode/plugins/agore.js)
+   ▼                                 ▼
+agore-forward.sh                   agore.js
+   └──────────────POST──────────────┘
+                    │
+                    ▼
+   127.0.0.1:<random port>/events   (loopback only)
+                    │
+      ActivityMapper → PresenceStore (1 person per agent)
+                    │
+    ┌───────────────┴───────────────┐
+    ▼                               ▼
+SpriteKit plaza          WebSocket hello/presence
+                                  │
+                           Go plaza server :8081
+                                  │
+                           broadcast to all clients
 ```
 
-- **Hooks are the live path.** A tiny forwarder script posts presence to a loopback HTTP
-  listener inside the app. The port is random per launch and written to
-  `~/Library/Application Support/Agore/ingest.port`; the forwarder reads it from there.
-  The script never blocks the agent: it has a 0.4s timeout and always exits 0.
-- **Transcript scanning is the fallback.** Every 30 seconds Agore checks the modification
-  time of Cursor's local transcript files under `~/.cursor/projects/*/agent-transcripts/`,
-  which covers cold starts and sessions that began before the hook was installed.
+- **Both agents speak the same JSON.** Whichever bridge sent it, an event is the same handful
+  of fields posted to a loopback HTTP listener inside the app. The port is random per launch
+  and written to `~/Library/Application Support/Agore/ingest.port`; both forwarders read it
+  from there and stay quiet when it is missing.
+- **Neither bridge can get in the agent's way.** The Cursor script has a 0.4s timeout and
+  always exits 0. The opencode plugin never awaits its own POST and swallows every error,
+  because throwing from `tool.execute.before` would block the tool it is reporting on.
+- **Transcript scanning is the fallback, for Cursor.** Every 30 seconds Agore checks the
+  modification time of Cursor's local transcript files under
+  `~/.cursor/projects/*/agent-transcripts/`, which covers cold starts and sessions that began
+  before the hook was installed. opencode needs no equivalent: it loads the plugin at startup,
+  so there is no window in which a session runs unobserved.
 - **Activity expires on a clock, membership does not.** Two minutes of silence sits an agent
   down to rest, but standing on the plaza is about being connected: people only walk out once
-  the server drops their client from the roster.
-- **An open tool call holds the clock.** Cursor emits nothing at all while a tool runs, so
-  a long test command would otherwise look the same as an agent that quit. Agore pairs each
-  `preToolUse` with its `postToolUse` (and the shell and MCP hooks with their counterparts)
-  and keeps the person on stage until the call reports back, up to thirty minutes.
+  the server drops them from the roster, which it does for all of a client's people at once
+  when the socket closes, and for one of them when Agore is unwired from that agent.
+- **An open tool call holds the clock.** Both agents go quiet for the whole duration of a
+  tool, so a long test command would otherwise look the same as an agent that quit. Agore
+  pairs each `preToolUse` with its `postToolUse` — and `tool.execute.before` with
+  `tool.execute.after`, and the shell and MCP hooks with their counterparts — and keeps the
+  person on stage until the call reports back, up to thirty minutes.
+- **opencode's MCP calls are the one blind spot.** opencode does not fire its tool hooks for
+  MCP tools, so an agent working through one looks like it is thinking rather than running.
 
 ### Privacy
 
-Agore is built to know *that* an agent is working, not *what* it is working on. The
-forwarder sends only the conversation id, the hook event name, the tool name, the opaque
+Agore is built to know *that* an agent is working, not *what* it is working on. Both
+bridges send only the conversation or session id, the event name, the tool name, the opaque
 tool call id, and the last path component of the workspace folder. Prompts, file contents,
-shell commands and their output, diffs, and full paths never leave the agent. The local
+shell commands and their output, diffs, and full paths never leave the agent — the opencode
+plugin reads a tool call's name and ignores its arguments entirely. The local
 database (`~/Library/Application Support/Agore/presence.sqlite`) stores the same narrow set
 and prunes itself after seven days. The local hook listener binds to loopback only.
 
-The shared plaza server sees even less: `client_id`, nickname, activity kind, and the
-current project folder name. A shared `AGORE_TOKEN` is required to join. Conversation
-ids never leave the Mac.
+The shared plaza server sees even less: `client_id`, `member_id` (the client id plus which
+agent it stands for), nickname, activity kind, and the current project folder name. The
+nickname travels on its own; pairing it with the agent for the label is something each
+client does when it draws. A shared `AGORE_TOKEN` is required to join. Conversation ids
+never leave the Mac.
 
 ## Project layout
 
 ```
-Apps/Agore/          AppKit shell: status item, floating panel, onboarding window
-Sources/AgoreCore/   presence model, Cursor adapters, plaza protocol, SQLite store
-Sources/AgorePlaza/  pixel art, styles, SpriteKit scene, character behaviour
-server/              Go WebSocket plaza (in-memory queue + broadcast)
-Resources/hooks/     the Cursor hook forwarder that gets installed for you
-Scripts/             Xcode project and app icon generators
-Tests/               unit tests for the mapping, parsing, store, and hook install
+Apps/Agore/                  AppKit shell: status item, floating panel, onboarding window
+Sources/AgoreCore/           presence model, activity mapping, bridge install, SQLite store
+Sources/AgoreCore/Ingest/    the loopback listener both agents post to
+Sources/AgoreCore/Cursor/    hooks.json install, transcript fallback
+Sources/AgoreCore/Opencode/  plugin install
+Sources/AgorePlaza/          pixel art, styles, SpriteKit scene, character behaviour
+server/                      Go WebSocket plaza (in-memory queue + broadcast)
+Resources/hooks/             the Cursor hook forwarder that gets installed for you
+Resources/plugins/           the opencode plugin that gets installed for you
+Scripts/                     Xcode project and app icon generators
+Tests/                       unit tests for the mapping, parsing, store, and both installers
 ```
+
+`Resources/plugins/agore.js` carries a version marker in its first line. Change the script
+and bump `AgoreConstants.opencodePluginVersion`, or opencode configs will keep loading the
+copy they already have.
 
 The pixel world is 360×42 and the strip renders at exactly 2×, so every pixel lands on an
 integer boundary. Changing one without the other will make the art blurry.
@@ -163,6 +207,12 @@ integer boundary. Changing one without the other will make the art blurry.
 Each Mac keeps a durable `client_id` in `~/Library/Application Support/Agore/client.json`.
 Reconnecting with the same id replaces the old socket, so restarting Agore does not spawn
 a second pixel person.
+
+One socket carries as many people as the client has agents. Each is identified by a
+`member_id` of `<client_id>:<agent>`, and the server only accepts a member a client can be
+seen to own, so nobody can rename or evict anyone else's people. A client from before this
+(protocol v1, no `member_id`) still stands on the plaza as a single person under its client
+id, so the server and the app can be updated in either order.
 
 ### Server
 
@@ -208,7 +258,7 @@ If the server is down the local pixel person still walks around; remote people d
 
 ## Roadmap
 
-- More agent providers beyond Cursor
+- More agent providers beyond Cursor and opencode
 - Rooms / per-user accounts (today there is one shared plaza token)
 
 ## License

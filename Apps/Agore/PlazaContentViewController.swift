@@ -12,7 +12,7 @@ final class PlazaContentViewController: NSViewController {
     private let contentSize: CGSize
     private let rounded: Bool
     private let statusField = NSTextField(labelWithString: "")
-    private let actionButton = NSButton(title: "Install Hooks", target: nil, action: nil)
+    private let actionButton = NSButton(title: "Connect Agents", target: nil, action: nil)
     private var cancellables: Set<AnyCancellable> = []
     private var refreshTimer: Timer?
     private var isActive = false
@@ -152,15 +152,14 @@ final class PlazaContentViewController: NSViewController {
 
     func refresh() {
         plazaView.sync(store: store)
-        let hooks = store.hooksInstalled ? "hooks on" : "hooks off"
         let time = store.lastEventAt.map(Self.clock.string(from:)) ?? "--:--"
         let live = store.plazaMembers().count
         let population = "\(live) person\(live == 1 ? "" : "s")"
-        let activity = store.instancePresence().kind.rawValue
-        statusField.stringValue = [population, activity, plazaLabel(store.plazaLink), hooks, time, hint]
+        let activity = store.localActivity().rawValue
+        statusField.stringValue = [population, activity, plazaLabel(store.plazaLink), store.bridges.summary, time, hint]
             .compactMap { $0 }
             .joined(separator: " · ")
-        actionButton.isHidden = store.hooksInstalled
+        actionButton.isHidden = !store.bridges.needsInstall
     }
 
     private func plazaLabel(_ state: PlazaLinkState) -> String {

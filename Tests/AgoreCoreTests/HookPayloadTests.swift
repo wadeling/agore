@@ -36,6 +36,55 @@ final class HookPayloadTests: XCTestCase {
         XCTAssertEqual(event.kind, .thinking)
     }
 
+    func testDefaultsToCursorWhenNoProviderIsGiven() throws {
+        let json = """
+        {
+          "conversation_id": "abc-123",
+          "hook_event_name": "preToolUse",
+          "tool_name": "Read"
+        }
+        """.data(using: .utf8)!
+        let event = try XCTUnwrap(JSONDecoder().decode(HookPayload.self, from: json).asPresenceEvent())
+        XCTAssertEqual(event.provider, AgoreConstants.providerCursor)
+    }
+
+    func testDecodesOpencodeToolCall() throws {
+        let json = """
+        {
+          "provider": "opencode",
+          "conversation_id": "ses_1",
+          "hook_event_name": "tool.execute.before",
+          "tool_name": "bash",
+          "tool_use_id": "call_1",
+          "project_slug": "agore"
+        }
+        """.data(using: .utf8)!
+        let event = try XCTUnwrap(JSONDecoder().decode(HookPayload.self, from: json).asPresenceEvent())
+        XCTAssertEqual(event.provider, AgoreConstants.providerOpencode)
+        XCTAssertEqual(event.conversationId, "ses_1")
+        XCTAssertEqual(event.toolUseId, "call_1")
+        XCTAssertEqual(event.kind, .running)
+    }
+
+    /// opencode reports a subagent as a session with a parent, so it needs none of the
+    /// separate subagent id that Cursor sends.
+    func testDecodesOpencodeChildSession() throws {
+        let json = """
+        {
+          "provider": "opencode",
+          "conversation_id": "ses_child",
+          "parent_conversation_id": "ses_parent",
+          "hook_event_name": "session.created",
+          "project_slug": "agore"
+        }
+        """.data(using: .utf8)!
+        let event = try XCTUnwrap(JSONDecoder().decode(HookPayload.self, from: json).asPresenceEvent())
+        XCTAssertEqual(event.conversationId, "ses_child")
+        XCTAssertEqual(event.parentId, "ses_parent")
+        XCTAssertTrue(event.isSubagent)
+        XCTAssertEqual(event.kind, .waiting)
+    }
+
     func testSubagentUsesSubagentId() throws {
         let json = """
         {
