@@ -15,6 +15,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var scanTimer: Timer?
     private var wakefulness: NSObjectProtocol?
 
+    /// Sweeping the transcripts walks every Cursor project on the Mac and parses the
+    /// tail of each live one, which is far more than fits between two frames of the
+    /// plaza: on the main thread it stalled the animation on every tick. Serial, so a
+    /// bridge installed by hand cannot race the timer's own install.
+    private let agentQueue = DispatchQueue(label: "dev.agore.agents", qos: .utility)
+
     private var startsPinned: Bool {
         UserDefaults.standard.bool(forKey: AgoreConstants.alwaysOnTopKey)
     }
@@ -153,18 +159,29 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     /// was already sitting in the menu bar gets wired up on its own. Installing is a
     /// no-op once the bridge is current.
     private func installBridges(_ only: AgentProvider? = nil) {
-        let statuses = bridges.install(only)
-        store.bridges = statuses
-        if let failed = statuses.first(where: \.failed) {
-            store.statusMessage = "\(failed.provider.rawValue) install failed"
+        let bridges = bridges
+        agentQueue.async {
+            let statuses = bridges.install(only, from: .main)
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                self.store.bridges = statuses
+                if let failed = statuses.first(where: \.failed) {
+                    self.store.statusMessage = "\(failed.provider.rawValue) install failed"
+                }
+            }
         }
     }
 
     private func scanTranscripts() {
-        let events = scanner.scan()
-        Task { @MainActor in
-            for event in events {
-                store.apply(event)
+        let scanner = scanner
+        agentQueue.async {
+            let events = scanner.scan()
+            guard !events.isEmpty else { return }
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                for event in events {
+                    self.store.apply(event)
+                }
             }
         }
     }

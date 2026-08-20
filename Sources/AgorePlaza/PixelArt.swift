@@ -226,6 +226,7 @@ enum PixelArt {
         case bubble
         case bird(theme: PlazaTheme, phase: Int)
         case leaf(theme: PlazaTheme)
+        case cloud(size: Int, shape: CloudShape, period: PlazaPeriod)
         case cat(variant: Int, pose: CatPose, phase: Int, small: Bool)
         case catSleeper(variant: Int, phase: Int)
         case character(skin: UInt32, hair: UInt32, tunic: UInt32, kind: ActivityKind, phase: Int, small: Bool)

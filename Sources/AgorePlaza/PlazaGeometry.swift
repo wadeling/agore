@@ -8,6 +8,29 @@ struct TreeSpec: Equatable, Sendable {
     var size: Int
 }
 
+/// A painted cloud's home. `size` is how big the lumps are; `shape` is how they
+/// sit, so two clouds of the same size can still read as different weather.
+struct CloudSpec: Equatable, Sendable {
+    var x: Int
+    var y: Int
+    var size: Int
+    var shape: CloudShape
+    var flipped: Bool = false
+}
+
+enum CloudShape: Int, Hashable, Sendable {
+    /// Three overlapping hills — the original lump.
+    case puff
+    /// Long and low, a streak more than a pile.
+    case wispy
+    /// Two puffs with a dip between them.
+    case twin
+    /// A wide rolling bank of four hills.
+    case bank
+    /// Tall in the middle, a tail off one side.
+    case anvil
+}
+
 /// Where everything stands, in world pixels. The painter and the actors both read their
 /// coordinates from here, so a theme can move the shoreline without leaving anyone
 /// walking on scenery that is no longer there.
@@ -197,7 +220,9 @@ struct PlazaGeometry: Hashable, Sendable {
             return [
                 TreeSpec(x: 62, y: 4, size: 1),
                 TreeSpec(x: 252, y: 3, size: 1),
-                TreeSpec(x: 306, y: 5, size: 0),
+                // Inset from the last towel and from the panel's rounded corner, which
+                // would otherwise clip the right-hand fronds.
+                TreeSpec(x: 334, y: 4, size: 1),
             ]
         case (.seaside, .courtyard):
             return [
@@ -235,6 +260,37 @@ struct PlazaGeometry: Hashable, Sendable {
         switch theme {
         case .agora: return max(0, spotY - PixelArt.characterHeight / 2)
         case .seaside: return max(0, spotY - PixelArt.catHeight / 2 - 3)
+        }
+    }
+
+    /// Where the sea gives way to sky. Clouds live above this line so they cannot
+    /// sit on a palm.
+    var skyY: Int {
+        horizonY + max(6, (worldHeight - horizonY) * 2 / 5)
+    }
+
+    /// Only the shore has a sky wide enough to watch. The agora keeps its weather
+    /// painted on, because a colonnade does not want clouds sliding through the beams.
+    var clouds: [CloudSpec] {
+        switch (theme, layout) {
+        case (.seaside, .strip):
+            let y = worldHeight - 5
+            return [
+                CloudSpec(x: 36, y: y, size: 2, shape: .twin),
+                CloudSpec(x: 88, y: y - 1, size: 3, shape: .puff),
+                CloudSpec(x: 148, y: y + 1, size: 2, shape: .wispy),
+                CloudSpec(x: 210, y: y - 2, size: 3, shape: .twin, flipped: true),
+                CloudSpec(x: 268, y: y, size: 2, shape: .puff),
+                CloudSpec(x: 322, y: y - 1, size: 2, shape: .wispy, flipped: true),
+            ]
+        case (.seaside, .courtyard):
+            return [
+                CloudSpec(x: 54, y: worldHeight - 34, size: 7, shape: .bank),
+                CloudSpec(x: 148, y: worldHeight - 16, size: 9, shape: .anvil),
+                CloudSpec(x: 206, y: skyY + 14, size: 5, shape: .bank, flipped: true),
+            ]
+        default:
+            return []
         }
     }
 

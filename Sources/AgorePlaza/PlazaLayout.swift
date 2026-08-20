@@ -23,4 +23,12 @@ public enum PlazaLayout: Hashable, Sendable {
     public var worldSize: CGSize {
         CGSize(width: worldWidth, height: worldHeight)
     }
+
+    /// How many view pixels a world pixel occupies. Strip is 2×, courtyard 3×.
+    public var pixelScale: Int {
+        switch self {
+        case .strip: return 2
+        case .courtyard: return 3
+        }
+    }
 }

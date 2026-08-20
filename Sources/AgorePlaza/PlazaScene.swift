@@ -9,18 +9,38 @@ public final class PlazaScene: SKScene {
     private var actors: [String: PlazaActor] = [:]
     private var leaving: [PlazaActor] = []
     private var cats: [PlazaCat] = []
+    private var clouds: [DriftingCloud] = []
+    private var birdNode: SKSpriteNode?
+    private var birdFlight: BirdFlight?
     private var slots: [String: Int] = [:]
     private var hovered: String?
-    private var tickAccum: TimeInterval = 0
-    private var lastTime: TimeInterval = 0
     private var ground: SKSpriteNode?
     private var period: PlazaPeriod = .current()
-    private var periodAccum: TimeInterval = 0
     private var backdropOpacity: CGFloat = AgoreConstants.groundOpacity
+    /// Frame times, not counts: everything below reads the clock the frame arrived
+    /// with, so a window macOS has throttled to a frame a second still animates in
+    /// step with real time instead of in slow motion.
+    private var now: TimeInterval = 0
+    private var skyEpoch: TimeInterval = 0
+    private var lastTickAt: TimeInterval = 0
+    private var lastPeriodAt: TimeInterval = 0
 
     /// Scenery that a theme owns. Swapping a theme throws all of it away and paints the
     /// new world from scratch, so nothing from the old one is left standing on the beach.
     private static let decorName = "decor"
+
+    private struct DriftingCloud {
+        let node: SKSpriteNode
+        let spec: CloudSpec
+        let origin: Double
+    }
+
+    private struct BirdFlight {
+        let from: Double
+        let to: Double
+        let startedAt: TimeInterval
+        let seconds: TimeInterval
+    }
 
     public init(layout: PlazaLayout, theme: PlazaTheme = .current) {
         self.layout = layout
@@ -60,6 +80,9 @@ public final class PlazaScene: SKScene {
     public func setBackdropOpacity(_ alpha: CGFloat) {
         backdropOpacity = alpha
         ground?.alpha = alpha
+        for cloud in clouds {
+            cloud.node.alpha = alpha
+        }
     }
 
     /// Repaints the plaza in another style. Everyone on stage walks back in from a gate
@@ -92,6 +115,9 @@ public final class PlazaScene: SKScene {
             child.removeFromParent()
         }
         cats.removeAll()
+        clouds.removeAll()
+        birdNode = nil
+        birdFlight = nil
         addDecor()
     }
 
@@ -197,17 +223,18 @@ public final class PlazaScene: SKScene {
     }
 
     public override func update(_ currentTime: TimeInterval) {
-        if lastTime == 0 { lastTime = currentTime }
-        let dt = currentTime - lastTime
-        lastTime = currentTime
-        periodAccum += dt
-        if periodAccum >= 30 {
-            periodAccum = 0
+        now = currentTime
+        if skyEpoch == 0 { skyEpoch = currentTime }
+        if lastTickAt == 0 { lastTickAt = currentTime }
+        if lastPeriodAt == 0 { lastPeriodAt = currentTime }
+        if currentTime - lastPeriodAt >= 30 {
+            lastPeriodAt = currentTime
             refreshPeriod()
         }
-        tickAccum += dt
-        guard tickAccum >= 0.18 else { return }
-        tickAccum = 0
+        driftClouds(elapsed: currentTime - skyEpoch)
+        stepBird()
+        guard currentTime - lastTickAt >= 0.18 else { return }
+        lastTickAt = currentTime
         refreshHover()
         for actor in actors.values {
             actor.tick(anchors: anchors)
@@ -223,9 +250,14 @@ public final class PlazaScene: SKScene {
         period = next
         ground.texture = PixelArt.plazaBackground(geometry, period: period)
         ground.texture?.filteringMode = .nearest
+        for cloud in clouds {
+            cloud.node.texture = PixelArt.cloud(cloud.spec, period: period)
+            cloud.node.texture?.filteringMode = .nearest
+        }
     }
 
     private func addAmbient() {
+        addClouds()
         for tree in geometry.trees {
             let origin = PixelArt.foliageTop(tree, theme: theme)
             for _ in 0..<(tree.size == 0 ? 1 : 2) {
@@ -262,6 +294,48 @@ public final class PlazaScene: SKScene {
         ]))
     }
 
+    /// The same lumps the background used to paint, now sliding themselves. Speed
+    /// belongs to the cloud's size; wrapping keeps the sky from thinning out.
+    private func addClouds() {
+        let scale = viewPixelScale()
+        for spec in geometry.clouds {
+            let node = SKSpriteNode(texture: PixelArt.cloud(spec, period: period))
+            node.name = Self.decorName
+            node.size = PixelArt.cloudSpriteSize(spec)
+            var position = PixelArt.cloudPosition(spec)
+            position.x = CGFloat(CloudDrift.snapped(Double(position.x), scale: scale))
+            position.y = CGFloat(CloudDrift.snapped(Double(position.y), scale: scale))
+            node.position = position
+            node.zPosition = 1
+            node.xScale = spec.flipped ? -1 : 1
+            node.alpha = backdropOpacity
+            node.texture?.filteringMode = .nearest
+            addChild(node)
+            clouds.append(DriftingCloud(node: node, spec: spec, origin: Double(position.x)))
+        }
+        // A rebuilt sky starts its own clock, or the new clouds would jump straight
+        // to wherever the old ones had drifted to.
+        skyEpoch = now
+    }
+
+    private func driftClouds(elapsed: TimeInterval) {
+        let scale = viewPixelScale()
+        for cloud in clouds {
+            cloud.node.position.x = CGFloat(CloudDrift.drifted(
+                origin: cloud.origin,
+                elapsed: elapsed,
+                pixelsPerSecond: CloudDrift.pixelsPerSecond(
+                    size: cloud.spec.size,
+                    worldWidth: geometry.worldWidth,
+                    isStrip: geometry.isStrip
+                ),
+                spriteWidth: Double(cloud.node.size.width),
+                worldWidth: geometry.worldWidth,
+                scale: scale
+            ))
+        }
+    }
+
     private func addBird() {
         let bird = SKSpriteNode(texture: PixelArt.bird(theme: theme, frame: 0))
         bird.name = Self.decorName
@@ -276,26 +350,61 @@ public final class PlazaScene: SKScene {
             restore: true
         )))
         addChild(bird)
+        birdNode = bird
         flyBird(bird)
     }
 
     private func flyBird(_ bird: SKSpriteNode) {
+        birdFlight = nil
         let fromLeft = Bool.random()
-        let y = CGFloat.random(in: geometry.birdAltitude)
-        let startX: CGFloat = fromLeft ? -8 : CGFloat(geometry.worldWidth) + 8
-        let endX: CGFloat = fromLeft ? CGFloat(geometry.worldWidth) + 8 : -8
+        let scale = viewPixelScale()
+        let y = CloudDrift.snapped(
+            Double(CGFloat.random(in: geometry.birdAltitude)),
+            scale: scale
+        )
+        let margin = 8.0
+        let from = fromLeft ? -margin : Double(geometry.worldWidth) + margin
+        let to = fromLeft ? Double(geometry.worldWidth) + margin : -margin
         bird.xScale = fromLeft ? 1 : -1
-        bird.position = CGPoint(x: startX, y: y)
+        bird.position = CGPoint(x: CGFloat(from), y: CGFloat(y))
         bird.alpha = 0
-        let duration = max(6.5, TimeInterval(geometry.worldWidth) / 38)
         bird.run(.sequence([
             .wait(forDuration: Double.random(in: 8...16)),
             .fadeAlpha(to: 0.9, duration: 0.2),
-            .moveTo(x: endX, duration: duration),
-            .fadeOut(withDuration: 0.2),
             .run { [weak self] in
-                self?.flyBird(bird)
+                guard let self else { return }
+                self.birdFlight = BirdFlight(
+                    from: from,
+                    to: to,
+                    startedAt: self.now,
+                    seconds: CloudDrift.birdFlightSeconds(worldWidth: self.geometry.worldWidth)
+                )
             },
         ]))
+    }
+
+    private func stepBird() {
+        guard let flight = birdFlight, let bird = birdNode else { return }
+        let progress = min(1, max(0, (now - flight.startedAt) / flight.seconds))
+        let x = flight.from + (flight.to - flight.from) * progress
+        bird.position.x = CGFloat(CloudDrift.snapped(x, scale: viewPixelScale()))
+        guard progress >= 1 else { return }
+        birdFlight = nil
+        bird.run(.sequence([
+            .fadeOut(withDuration: 0.2),
+            .run { [weak self, weak bird] in
+                guard let self, let bird else { return }
+                self.flyBird(bird)
+            },
+        ]))
+    }
+
+    /// The real view-to-world ratio, so a resized window still hops on its own
+    /// pixel grid rather than the designed 2× / 3×.
+    private func viewPixelScale() -> Double {
+        guard let view, view.bounds.width > 1, size.width > 0 else {
+            return Double(geometry.layout.pixelScale)
+        }
+        return Double(view.bounds.width / size.width)
     }
 }

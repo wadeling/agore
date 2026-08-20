@@ -34,6 +34,7 @@ public final class PresenceStore: ObservableObject {
     private var byId: [String: AgentSession] = [:]
     private var remoteRoster: [String: PlazaMember] = [:]
     private var idleTimer: Timer?
+    private var lastPrunedAt: Date?
     private var lastPublished: [String: PlazaMember] = [:]
     private var lastPublishedAt: [String: Date] = [:]
     /// Tool calls that opened but have not reported back, keyed by session then by
@@ -332,7 +333,7 @@ public final class PresenceStore: ObservableObject {
             changed = true
         }
         if changed { publish() }
-        try? sqlite.prune(olderThan: now.addingTimeInterval(-7 * 24 * 60 * 60))
+        pruneHistory(at: now)
         notifyInstanceChange()
         let people = plazaMembers().count
         switch plazaLink {
@@ -345,6 +346,15 @@ public final class PresenceStore: ObservableObject {
         case .offline:
             statusMessage = "\(people) people · plaza offline"
         }
+    }
+
+    /// A week-old row does not come due every five seconds, and both deletes scan the
+    /// table. Hourly keeps the file from growing without putting a write in the way of
+    /// whatever the plaza is drawing.
+    private func pruneHistory(at now: Date) {
+        if let lastPrunedAt, now.timeIntervalSince(lastPrunedAt) < 60 * 60 { return }
+        lastPrunedAt = now
+        try? sqlite.prune(olderThan: now.addingTimeInterval(-7 * 24 * 60 * 60))
     }
 
     private func pruneExpiredCalls(at now: Date) {

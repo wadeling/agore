@@ -99,8 +99,7 @@ extension PixelArt {
         let tint = Shore.tint(for: period)
         // Distance runs upward on both themes: the beach is nearest, then the water, then
         // the sky sits along the top edge where the agora keeps its colonnade.
-        let waterline = geometry.horizonY
-        let skyLine = waterline + max(6, (geometry.worldHeight - waterline) * 2 / 5)
+        let skyLine = geometry.skyY
         drawShoreSky(&canvas, geometry: geometry, skyLine: skyLine, tint: tint, period: period)
         drawSea(&canvas, geometry: geometry, skyLine: skyLine, tint: tint)
         drawBeach(&canvas, geometry: geometry)
@@ -135,41 +134,152 @@ extension PixelArt {
             canvas.disk(sunX, sunY, geometry.isStrip ? 2 : 6, Shore.sun)
         case .night:
             scatterStars(&canvas, geometry: geometry, above: skyLine + 4, color: Palette.star)
-            // Clear of the clouds, which are painted right after and would otherwise have
-            // the moon hanging in front of one.
+            // Starts in a gap the clouds leave empty. They drift now, so one may later
+            // slide across the moon — which is what a sky does.
             let moonX = geometry.isStrip ? 30 : 100
             let moonY = height - (geometry.isStrip ? 5 : 22)
             canvas.disk(moonX, moonY, geometry.isStrip ? 2 : 5, Palette.moon)
             canvas.disk(moonX + 2, moonY + 2, geometry.isStrip ? 1 : 3, tint.sky)
         }
+    }
 
-        if geometry.isStrip {
-            drawCloud(&canvas, cx: 74, cy: height - 6, size: 3, tint: tint)
-            drawCloud(&canvas, cx: 258, cy: height - 5, size: 2, tint: tint)
-        } else {
-            drawCloud(&canvas, cx: 54, cy: height - 34, size: 7, tint: tint)
-            drawCloud(&canvas, cx: 148, cy: height - 16, size: 9, tint: tint)
-            drawCloud(&canvas, cx: 206, cy: skyLine + 14, size: 5, tint: tint)
+    static func cloud(_ spec: CloudSpec, period: PlazaPeriod) -> SKTexture {
+        let lump = max(2, spec.size)
+        return cached(.cloud(size: lump, shape: spec.shape, period: period)) {
+            buildCloud(size: lump, shape: spec.shape, tint: Shore.tint(for: period))
         }
     }
 
-    /// Three overlapping lumps on a flat base, which is what makes a pixel cloud read as
-    /// one solid thing instead of a row of circles.
+    /// The sprite's centre in world pixels, so the flat base still sits on `spec.y`.
+    static func cloudPosition(_ spec: CloudSpec) -> CGPoint {
+        let metrics = cloudMetrics(spec.size, shape: spec.shape)
+        return CGPoint(
+            x: CGFloat(spec.x),
+            y: CGFloat(spec.y) + CGFloat(metrics.height) / 2 - CGFloat(metrics.originY)
+        )
+    }
+
+    static func cloudSpriteSize(_ spec: CloudSpec) -> CGSize {
+        let metrics = cloudMetrics(spec.size, shape: spec.shape)
+        return CGSize(width: metrics.width, height: metrics.height)
+    }
+
+    private struct CloudMetrics {
+        let width: Int
+        let height: Int
+        let originX: Int
+        let originY: Int
+    }
+
+    private struct CloudLump {
+        var dx: Int
+        var dy: Int
+        var r: Int
+    }
+
+    /// Five silhouettes, scaled by `size`. Small weather uses puff, wispy and twin;
+    /// the courtyard banks and anvils are the two large ones.
+    private static func lumps(size: Int, shape: CloudShape) -> [CloudLump] {
+        let r = max(2, size)
+        switch shape {
+        case .puff:
+            return [
+                CloudLump(dx: 0, dy: r / 2, r: r),
+                CloudLump(dx: -r, dy: r / 3, r: max(1, (r * 2) / 3)),
+                CloudLump(dx: r + 1, dy: r / 4, r: max(1, (r * 3) / 4)),
+            ]
+        case .wispy:
+            let a = max(2, r / 2)
+            let b = max(2, (r * 2) / 3)
+            return [
+                CloudLump(dx: -r - 1, dy: a / 2, r: a),
+                CloudLump(dx: 0, dy: b / 2, r: b),
+                CloudLump(dx: r + 1, dy: a / 2, r: a),
+                CloudLump(dx: r + a + 1, dy: max(1, a / 2), r: max(1, a - 1)),
+            ]
+        case .twin:
+            return [
+                CloudLump(dx: -r, dy: r / 2, r: r),
+                CloudLump(dx: r + 1, dy: max(1, r / 3), r: max(2, r - 1)),
+            ]
+        case .bank:
+            return [
+                CloudLump(dx: -r - r / 2, dy: r / 3, r: max(2, (r * 2) / 3)),
+                CloudLump(dx: -r / 3, dy: r / 2, r: r),
+                CloudLump(dx: r / 2, dy: (r * 2) / 3, r: r),
+                CloudLump(dx: r + r / 2, dy: r / 4, r: max(2, (r * 3) / 5)),
+            ]
+        case .anvil:
+            return [
+                CloudLump(dx: 0, dy: r / 2, r: r),
+                CloudLump(dx: -r, dy: r / 4, r: max(2, r / 2)),
+                CloudLump(dx: r, dy: r / 3, r: max(2, (r * 3) / 4)),
+                CloudLump(dx: r + r / 2 + 1, dy: r / 5, r: max(2, r / 2)),
+            ]
+        }
+    }
+
+    private static func cloudMetrics(_ size: Int, shape: CloudShape) -> CloudMetrics {
+        let lumps = lumps(size: size, shape: shape)
+        var minX = 0
+        var maxX = 0
+        var minY = 0
+        var maxY = 0
+        for lump in lumps {
+            minX = min(minX, lump.dx - lump.r)
+            maxX = max(maxX, lump.dx + lump.r)
+            minY = min(minY, lump.dy - lump.r)
+            maxY = max(maxY, lump.dy + lump.r)
+        }
+        minY = min(minY, 0)
+        let pad = 1
+        return CloudMetrics(
+            width: maxX - minX + 1 + pad * 2,
+            height: maxY - minY + 1 + pad * 2,
+            originX: -minX + pad,
+            originY: -minY + pad
+        )
+    }
+
+    private static func buildCloud(size: Int, shape: CloudShape, tint: Shore.Tint) -> SKTexture {
+        let metrics = cloudMetrics(size, shape: shape)
+        var canvas = PixelCanvas(width: metrics.width, height: metrics.height, fill: Palette.clear)
+        drawCloud(
+            &canvas,
+            cx: metrics.originX,
+            cy: metrics.originY,
+            size: size,
+            shape: shape,
+            tint: tint
+        )
+        return canvas.texture()
+    }
+
     private static func drawCloud(
         _ canvas: inout PixelCanvas,
         cx: Int,
         cy: Int,
         size: Int,
+        shape: CloudShape,
         tint: Shore.Tint
     ) {
         let r = max(2, size)
-        let left = cx - r - (r * 2) / 3
-        let right = cx + r + 1 + (r * 3) / 4
-        canvas.disk(cx, cy + r / 2, r, tint.cloud)
-        canvas.disk(cx - r, cy + r / 3, (r * 2) / 3, tint.cloud)
-        canvas.disk(cx + r + 1, cy + r / 4, (r * 3) / 4, tint.cloud)
-        canvas.fill(left, cy, right - left, max(2, r / 2), tint.cloud)
-        canvas.fill(left, cy, right - left, 1, tint.cloudShade)
+        let lumps = lumps(size: size, shape: shape)
+        var left = cx
+        var right = cx
+        for lump in lumps {
+            canvas.disk(cx + lump.dx, cy + lump.dy, lump.r, tint.cloud)
+            left = min(left, cx + lump.dx - lump.r)
+            right = max(right, cx + lump.dx + lump.r + 1)
+        }
+        let baseH: Int
+        switch shape {
+        case .wispy: baseH = max(1, r / 3)
+        case .twin: baseH = max(2, r / 3)
+        default: baseH = max(2, r / 2)
+        }
+        canvas.fill(left, cy, max(1, right - left), baseH, tint.cloud)
+        canvas.fill(left, cy, max(1, right - left), 1, tint.cloudShade)
     }
 
     private static func drawSea(

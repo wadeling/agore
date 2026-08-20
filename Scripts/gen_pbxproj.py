@@ -95,6 +95,7 @@ core_files = [
     "Sources/AgoreCore/Models.swift",
     "Sources/AgoreCore/PlazaTheme.swift",
     "Sources/AgoreCore/PanelOpacity.swift",
+    "Sources/AgoreCore/CloudDrift.swift",
     "Sources/AgoreCore/ActivityMapper.swift",
     "Sources/AgoreCore/AgentBridges.swift",
     "Sources/AgoreCore/Ingest/HookPayload.swift",
@@ -138,6 +139,7 @@ test_files = [
     "Tests/AgoreCoreTests/PresenceStoreTests.swift",
     "Tests/AgoreCoreTests/PlazaProtocolTests.swift",
     "Tests/AgoreCoreTests/PanelOpacityTests.swift",
+    "Tests/AgoreCoreTests/CloudDriftTests.swift",
 ]
 # One group per Resources subfolder, each installed into a different agent's config.
 resource_groups = {

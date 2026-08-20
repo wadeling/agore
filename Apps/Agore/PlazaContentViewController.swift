@@ -36,7 +36,7 @@ final class PlazaContentViewController: NSViewController {
             height: max(AgoreConstants.plazaHeight, size.height - AgoreConstants.statusHeight)
         )
         self.plazaView = PlazaView(frame: plazaFrame, layout: layout)
-        self.plazaView.isPaused = true
+        self.plazaView.setPaused(true)
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -165,10 +165,16 @@ final class PlazaContentViewController: NSViewController {
 
     /// A scene left paused renders nothing that was added while it slept, so becoming
     /// active has to redraw from the store rather than wait for the next event.
+    ///
+    /// SpriteKit also pauses the plaza behind our back — an occluded window is enough —
+    /// and it does not always hand it back. Our own flag then says the plaza is running
+    /// while every action on it stands still, so what the view actually holds decides
+    /// whether there is work to do, not the flag.
     func setActive(_ active: Bool) {
-        guard active != isActive else { return }
+        let drifted = plazaView.isPlazaPaused == active
+        guard active != isActive || drifted else { return }
         isActive = active
-        plazaView.isPaused = !active
+        plazaView.setPaused(!active)
         if active {
             refresh()
         }
