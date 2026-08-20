@@ -11,6 +11,9 @@ final class PlazaContentViewController: NSViewController {
     private let onInstall: () -> Void
     private let contentSize: CGSize
     private let rounded: Bool
+    /// The courtyard is a document: it only needs to move while Agore is frontmost.
+    /// The strip is a companion overlay, so it keeps ticking while you work elsewhere.
+    private let pausesWhenInactive: Bool
     private let statusField = NSTextField(labelWithString: "")
     private let actionButton = NSButton(title: "Connect Agents", target: nil, action: nil)
     private let statusBar = NSView()
@@ -29,6 +32,7 @@ final class PlazaContentViewController: NSViewController {
         self.onInstall = onInstall
         self.contentSize = size
         self.rounded = rounded
+        self.pausesWhenInactive = layout == .courtyard
         let plazaFrame = NSRect(
             x: 0,
             y: AgoreConstants.statusHeight,
@@ -100,10 +104,13 @@ final class PlazaContentViewController: NSViewController {
                 self?.refresh()
             }
             .store(in: &cancellables)
+        observeRunningState()
         // Presence expires on a clock, not on a store mutation, so departures need a tick
-        // of their own or a finished agent lingers on screen.
+        // of their own or a finished agent lingers on screen. The same tick also matches
+        // the pause flag to the window, but only a plaza that should be running is
+        // allowed to wake — an occluded courtyard used to get unpaused from here.
         refreshTimer = Timer.scheduledTimer(withTimeInterval: 2, repeats: true) { [weak self] _ in
-            self?.resumeIfOnScreen()
+            self?.syncRunning()
             self?.refresh()
         }
         refreshTimer?.tolerance = 0.5
@@ -112,25 +119,60 @@ final class PlazaContentViewController: NSViewController {
 
     override func viewDidAppear() {
         super.viewDidAppear()
-        resumeIfOnScreen()
+        syncRunning()
     }
 
     /// Both surfaces stay alive for the whole session, so a strip nobody can see would
-    /// otherwise keep animating an empty plaza at thirty frames a second. AppKit reports
-    /// this for a window that is merely buried too, not only for one ordered out.
+    /// otherwise keep animating an empty plaza. AppKit reports this for a window that
+    /// is merely buried too, not only for one ordered out.
     override func viewDidDisappear() {
         super.viewDidDisappear()
         setActive(false)
     }
 
-    /// Going to sleep can be edge driven, but waking up cannot: a resume that never
-    /// arrives — an overnight display sleep is enough — leaves the plaza frozen on
-    /// whatever pose it held while the status bar beside it keeps counting up, and
-    /// nothing else would ever repair it. Two property reads a tick buys that back.
-    private func resumeIfOnScreen() {
-        guard let window = view.window, window.isVisible else { return }
-        guard window.occlusionState.contains(.visible) else { return }
-        setActive(true)
+    /// SpriteKit pauses an occluded window on its own and does not always hand it back,
+    /// and a display that slept overnight never posts the occlusion event we would
+    /// resume from. Matching the pause flag to `shouldRun` covers both: a buried or
+    /// background courtyard stays still, a frontmost one that SpriteKit froze starts
+    /// again, and an occluded one is never woken just because the timer fired.
+    private func observeRunningState() {
+        let windowNotes: [Notification.Name] = [
+            NSWindow.didChangeOcclusionStateNotification,
+            NSWindow.didMiniaturizeNotification,
+            NSWindow.didDeminiaturizeNotification,
+        ]
+        for name in windowNotes {
+            NotificationCenter.default.publisher(for: name)
+                .receive(on: DispatchQueue.main)
+                .sink { [weak self] note in
+                    guard let self, note.object as? NSWindow === self.view.window else { return }
+                    self.syncRunning()
+                }
+                .store(in: &cancellables)
+        }
+        for name in [NSApplication.didBecomeActiveNotification, NSApplication.didResignActiveNotification] {
+            NotificationCenter.default.publisher(for: name)
+                .receive(on: DispatchQueue.main)
+                .sink { [weak self] _ in self?.syncRunning() }
+                .store(in: &cancellables)
+        }
+        for name in [NSWorkspace.screensDidWakeNotification, NSWorkspace.didWakeNotification] {
+            NSWorkspace.shared.notificationCenter.publisher(for: name)
+                .receive(on: DispatchQueue.main)
+                .sink { [weak self] _ in self?.syncRunning() }
+                .store(in: &cancellables)
+        }
+    }
+
+    private var shouldRun: Bool {
+        guard let window = view.window, window.isVisible, !window.isMiniaturized else { return false }
+        guard window.occlusionState.contains(.visible) else { return false }
+        if pausesWhenInactive, !NSApp.isActive { return false }
+        return true
+    }
+
+    private func syncRunning() {
+        setActive(shouldRun)
     }
 
     func apply(theme: PlazaTheme) {

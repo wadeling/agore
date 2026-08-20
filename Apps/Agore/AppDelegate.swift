@@ -74,7 +74,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         installBridges()
         scanTranscripts()
         setUpStatusItem()
-        presentPlazaWindow()
+        // The square window is a document, not a splash: it waits for a Dock click
+        // or Agore → Show Plaza. A pinned strip still comes back on its own.
         if startsPinned {
             statusItem?.showPlaza()
         }

@@ -605,6 +605,7 @@ o(f"\t\t{ids['CONF_PROJECT_RELEASE']} /* Release */ = {{")
 o("\t\t\tisa = XCBuildConfiguration;")
 o("\t\t\tbuildSettings = {")
 o(project_common)
+o("\t\t\t\tONLY_ACTIVE_ARCH = YES;")
 o("\t\t\t\tSWIFT_COMPILATION_MODE = wholemodule;")
 o("\t\t\t\tSWIFT_OPTIMIZATION_LEVEL = \"-O\";")
 o("\t\t\t};")
@@ -633,7 +634,7 @@ lib_conf("CONF_CORE_RELEASE", "Release", "AgoreCore", "com.wadeling.agore.core")
 lib_conf("CONF_PLAZA_DEBUG", "Debug", "AgorePlaza", "com.wadeling.agore.plaza")
 lib_conf("CONF_PLAZA_RELEASE", "Release", "AgorePlaza", "com.wadeling.agore.plaza")
 
-def app_conf(cid, name):
+def app_conf(cid, name, *, release=False):
     o(f"\t\t{ids[cid]} /* {name} */ = {{")
     o("\t\t\tisa = XCBuildConfiguration;")
     o("\t\t\tbuildSettings = {")
@@ -650,12 +651,18 @@ def app_conf(cid, name):
     o("\t\t\t\tPRODUCT_BUNDLE_IDENTIFIER = com.wadeling.agore;")
     o("\t\t\t\tPRODUCT_NAME = Agore;")
     o("\t\t\t\tSWIFT_EMIT_LOC_STRINGS = YES;")
+    # Swift 6.2.1's -O whole-module pipeline traps in PerformanceConstantPropagation
+    # / SILCombine on the AppKit window and panel inits. Core and Plaza still
+    # optimize; the shell is glue and is not worth a frontend crash.
+    if release:
+        o("\t\t\t\tSWIFT_COMPILATION_MODE = singlefile;")
+        o("\t\t\t\tSWIFT_OPTIMIZATION_LEVEL = \"-Onone\";")
     o("\t\t\t};")
     o(f"\t\t\tname = {name};")
     o("\t\t};")
 
 app_conf("CONF_APP_DEBUG", "Debug")
-app_conf("CONF_APP_RELEASE", "Release")
+app_conf("CONF_APP_RELEASE", "Release", release=True)
 
 def test_conf(cid, name):
     o(f"\t\t{ids[cid]} /* {name} */ = {{")

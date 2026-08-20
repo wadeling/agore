@@ -188,8 +188,19 @@ public final class PlazaScene: SKScene {
     /// The pointer is read off the screen rather than waited for as an event: the plaza is
     /// usually a panel of an app that is not frontmost, and mouse-moved events reach it
     /// only once something has brought it forward.
-    private func refreshHover() {
-        guard let view = view, let window = view.window, window.isVisible else {
+    var pointerInside = false
+
+    /// Walking, fidgeting, a bird, or the pointer resting on someone. An idle strip
+    /// drops its display link; the last frame stays on screen.
+    var needsAnimation: Bool {
+        if pointerInside { return true }
+        if birdFlight != nil { return true }
+        if !leaving.isEmpty { return true }
+        return actors.values.contains { $0.needsAnimation }
+    }
+
+    func refreshHover() {
+        guard pointerInside, let view = view, let window = view.window, window.isVisible else {
             hover(nil)
             return
         }
@@ -199,7 +210,7 @@ public final class PlazaScene: SKScene {
 
     /// Spells out the name of whoever the pointer is resting on, and shortens everyone
     /// else's back. Pass nil when the pointer is off the plaza.
-    private func hover(_ point: CGPoint?) {
+    func hover(_ point: CGPoint?) {
         // Topmost first, so the one drawn over the others is the one that answers.
         let found = point.flatMap { point in
             actors.values
@@ -223,6 +234,7 @@ public final class PlazaScene: SKScene {
     }
 
     public override func update(_ currentTime: TimeInterval) {
+        (view as? PlazaView)?.consumeFirstFrame()
         now = currentTime
         if skyEpoch == 0 { skyEpoch = currentTime }
         if lastTickAt == 0 { lastTickAt = currentTime }
@@ -233,14 +245,18 @@ public final class PlazaScene: SKScene {
         }
         driftClouds(elapsed: currentTime - skyEpoch)
         stepBird()
-        guard currentTime - lastTickAt >= 0.18 else { return }
-        lastTickAt = currentTime
-        refreshHover()
-        for actor in actors.values {
-            actor.tick(anchors: anchors)
+        if currentTime - lastTickAt >= 0.18 {
+            lastTickAt = currentTime
+            refreshHover()
+            for actor in actors.values {
+                actor.tick(anchors: anchors)
+            }
+            for actor in leaving {
+                actor.tick(anchors: anchors)
+            }
         }
-        for actor in leaving {
-            actor.tick(anchors: anchors)
+        if geometry.isStrip {
+            (view as? PlazaView)?.applyRunState()
         }
     }
 

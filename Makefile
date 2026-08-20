@@ -12,12 +12,15 @@ XCODEBUILD := xcodebuild \
 	-configuration $(CONFIGURATION) \
 	-derivedDataPath $(DERIVED_DATA)
 
-.PHONY: all build test run clean gen-project icons plaza plaza-down plaza-test
+.PHONY: all build release test run run-release clean gen-project icons plaza plaza-down plaza-test
 
 all: build
 
 build:
 	$(XCODEBUILD) build
+
+release:
+	$(MAKE) build CONFIGURATION=Release
 
 test:
 	$(XCODEBUILD) test
@@ -27,8 +30,12 @@ run: build
 	@sleep 0.3
 	open "$(APP)"
 	@echo ""
-	@echo "Dock / first launch: square window (centered)."
-	@echo "Menu bar icon: floating strip. Right-click for Always on Top / token."
+	@echo "Built $(CONFIGURATION) → $(APP)"
+	@echo "Menu bar icon: floating strip. Dock click or ⌘0: square window."
+	@echo "Right-click the icon for Always on Top / token."
+
+run-release:
+	$(MAKE) run CONFIGURATION=Release
 
 icons:
 	python3 Scripts/generate_icons.py

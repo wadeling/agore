@@ -31,4 +31,14 @@ public enum PlazaLayout: Hashable, Sendable {
         case .courtyard: return 3
         }
     }
+
+    /// How many times a second the view asks to draw while something is moving.
+    /// Pixel art ticks at 0.18s; the strip sits in the corner all day, so it
+    /// asks for less. An idle strip does not draw at all.
+    public var framesPerSecond: Int {
+        switch self {
+        case .strip: return 8
+        case .courtyard: return 30
+        }
+    }
 }

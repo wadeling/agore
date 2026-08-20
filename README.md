@@ -30,16 +30,23 @@ can broadcast those people to every other client over WebSocket.
 ## Getting started
 
 ```bash
-make build     # compile the app
-make run       # (re)launch it
+make build     # compile the app (Debug)
+make release   # optimized Release build
+make run       # (re)launch the Debug build
+make run-release
 make test      # run the unit tests
 ```
 
-On first launch Agore opens a small window so you can see it exists, and wires itself into
-whichever agents it finds on the Mac: a hook in `~/.cursor/hooks.json` for Cursor, a plugin
-in `~/.config/opencode/plugins/` for opencode. Close the window and the app moves into the
-menu bar. Both agents need to be restarted once for a freshly installed bridge to take
-effect, and an agent installed later gets picked up within half a minute.
+`make build` and `make run` default to Debug. Pass `CONFIGURATION=Release` to either, or use
+the `release` / `run-release` targets. The binary lands at
+`build/DerivedData/Build/Products/<Debug|Release>/Agore.app`.
+
+On first launch Agore sits in the menu bar and wires itself into whichever agents it finds
+on the Mac: a hook in `~/.cursor/hooks.json` for Cursor, a plugin in
+`~/.config/opencode/plugins/` for opencode. The square courtyard opens from a Dock click
+or **Agore → Show Plaza** (⌘0). Both agents need to be restarted once for a freshly
+installed bridge to take effect, and an agent installed later gets picked up within half
+a minute.
 
 Agents Agore cannot find are left alone rather than having a config directory created for
 them. If yours lives somewhere unusual, install it by hand from **Agents** in the status
@@ -47,7 +54,8 @@ item menu.
 
 ### Using it
 
-- **Left-click** the menu bar icon: show or hide the plaza
+- **Left-click** the menu bar icon: show or hide the floating strip
+- **Dock click** or **Agore → Show Plaza** (⌘0): open the square courtyard window
 - **Right-click** (or Control-click): **Style**, **Opacity**, **Always on Top**, nickname, plaza token, show/hide, **Agents**, quit
 - **Opacity** defaults to 80% and can be dragged live from the status item or **View → Opacity**; Agore remembers it across launches
 - **Hover** a pixel person: their name spells itself out in full
@@ -190,8 +198,10 @@ integer boundary. Changing one without the other will make the art blurry.
 
 | Target | What it does |
 | --- | --- |
-| `make build` | build the app |
-| `make run` | rebuild, kill the running copy, relaunch |
+| `make build` | build the app (Debug) |
+| `make release` | build the app (Release, optimized) |
+| `make run` | rebuild Debug, kill the running copy, relaunch |
+| `make run-release` | same, with the Release binary |
 | `make test` | run the unit tests |
 | `make gen-project` | regenerate `Agore.xcodeproj` from `Scripts/gen_pbxproj.py` |
 | `make icons` | regenerate the app icon set from the source art |

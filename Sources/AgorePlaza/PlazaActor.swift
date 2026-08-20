@@ -272,6 +272,17 @@ final class PlazaActor {
         }
         keepNameInFrame()
     }
+
+    /// Sitting idle or asleep is a still frame. Walking, fidgeting, or leaving
+    /// is what keeps the strip's display link alive.
+    var needsAnimation: Bool {
+        if isLeaving { return true }
+        if node.action(forKey: "walk") != nil { return true }
+        switch kind {
+        case .idle: return false
+        case .reading, .writing, .waiting, .running, .thinking: return true
+        }
+    }
 }
 
 struct PlazaAnchors {

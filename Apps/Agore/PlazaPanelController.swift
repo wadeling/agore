@@ -34,6 +34,7 @@ final class PlazaPanelController: NSObject, NSWindowDelegate {
         panel.backgroundColor = .clear
         panel.hasShadow = true
         panel.isMovableByWindowBackground = true
+        panel.acceptsMouseMovedEvents = true
         panel.animationBehavior = .utilityWindow
         panel.level = .floating
         panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary]
