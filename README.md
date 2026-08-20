@@ -48,7 +48,8 @@ item menu.
 ### Using it
 
 - **Left-click** the menu bar icon: show or hide the plaza
-- **Right-click** (or Control-click): **Style**, **Always on Top**, nickname, plaza token, show/hide, **Agents**, quit
+- **Right-click** (or Control-click): **Style**, **Opacity**, **Always on Top**, nickname, plaza token, show/hide, **Agents**, quit
+- **Opacity** defaults to 80% and can be dragged live from the status item or **View → Opacity**; Agore remembers it across launches
 - **Hover** a pixel person: their name spells itself out in full
 - **Drag** the strip anywhere; Agore remembers where you put it
 - With **Always on Top** enabled the plaza joins every Space, survives clicks elsewhere, and

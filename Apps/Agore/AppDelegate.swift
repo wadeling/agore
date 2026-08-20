@@ -132,6 +132,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         windowController?.apply(theme: theme)
     }
 
+    /// Only the floating strip fades; the square window stays solid so it still reads as
+    /// a regular document when someone opens it from the Dock.
+    func applyOpacity(_ opacity: Double) {
+        statusItem?.apply(opacity: opacity)
+    }
+
     /// Renaming republishes every person this client owns, each with the agent it stands
     /// for appended, so there is nothing a separate nick frame could say.
     private func applyNickname(_ name: String) {

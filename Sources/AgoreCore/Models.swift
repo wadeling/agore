@@ -292,6 +292,7 @@ public enum AgoreConstants {
     public static let plazaTokenKey = "AgorePlazaToken"
     public static let displayNameKey = "AgoreDisplayName"
     public static let themeKey = "AgoreTheme"
+    public static let panelOpacityKey = "AgorePanelOpacity"
     public static let defaultPlazaURL = "wss://agore.bytebar.dev/v1/plaza"
     /// Version 2 added member_id: one client stands on the plaza as a person per agent.
     public static let plazaProtocolVersion = 2

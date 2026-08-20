@@ -16,6 +16,7 @@ public final class PlazaScene: SKScene {
     private var ground: SKSpriteNode?
     private var period: PlazaPeriod = .current()
     private var periodAccum: TimeInterval = 0
+    private var backdropOpacity: CGFloat = AgoreConstants.groundOpacity
 
     /// Scenery that a theme owns. Swapping a theme throws all of it away and paints the
     /// new world from scratch, so nothing from the old one is left standing on the beach.
@@ -46,12 +47,19 @@ public final class PlazaScene: SKScene {
             ground.size = size
             ground.position = CGPoint(x: size.width / 2, y: size.height / 2)
             ground.zPosition = 0
-            ground.alpha = AgoreConstants.groundOpacity
+            ground.alpha = backdropOpacity
             ground.texture?.filteringMode = .nearest
             addChild(ground)
             self.ground = ground
             addDecor()
         }
+    }
+
+    /// How solid the floor is. One hundred percent opacity on the strip turns this up
+    /// to fully opaque; the designed 0.7 is what 80% looks like.
+    public func setBackdropOpacity(_ alpha: CGFloat) {
+        backdropOpacity = alpha
+        ground?.alpha = alpha
     }
 
     /// Repaints the plaza in another style. Everyone on stage walks back in from a gate

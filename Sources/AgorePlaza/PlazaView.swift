@@ -40,6 +40,10 @@ public final class PlazaView: SKView {
         plazaScene.apply(theme: theme)
     }
 
+    public func setBackdropOpacity(_ alpha: CGFloat) {
+        plazaScene.setBackdropOpacity(alpha)
+    }
+
     public func sync(store: PresenceStore) {
         attachSceneIfNeeded()
         plazaScene.sync(sessions: store.plazaMembers().map { $0.asSession() })

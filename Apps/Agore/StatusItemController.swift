@@ -76,6 +76,7 @@ final class StatusItemController: NSObject {
 
         menu.addItem(.separator())
         menu.addItem(styleItem())
+        menu.addItem(opacityItem())
         menu.addItem(.separator())
 
         let nick = NSMenuItem(
@@ -165,6 +166,27 @@ final class StatusItemController: NSObject {
         panel.apply(theme: theme)
     }
 
+    /// A slider, not a radio group, so the strip can be faded while the menu is still
+    /// open — the same way volume works, rather than committing one of five presets.
+    private func opacityItem() -> NSMenuItem {
+        let item = NSMenuItem(title: "Opacity", action: nil, keyEquivalent: "")
+        let submenu = NSMenu()
+        let sliderItem = NSMenuItem()
+        let view = OpacitySliderView(opacity: PanelOpacity.current)
+        view.onChange = { [weak self] value in
+            self?.apply(opacity: value)
+        }
+        sliderItem.view = view
+        submenu.addItem(sliderItem)
+        item.submenu = submenu
+        return item
+    }
+
+    func apply(opacity: Double) {
+        PanelOpacity.current = opacity
+        panel.setOpacity(opacity)
+    }
+
     @objc private func togglePinned() {
         panel.setPinned(!panel.isPinned)
         if panel.isPinned, !panel.isVisible {
@@ -227,5 +249,50 @@ final class StatusItemController: NSObject {
         if alert.runModal() == .alertFirstButtonReturn {
             submit(field.stringValue)
         }
+    }
+}
+
+@MainActor
+final class OpacitySliderView: NSView {
+    let slider: NSSlider
+    var onChange: ((Double) -> Void)?
+
+    private let percent: NSTextField
+
+    init(opacity: Double) {
+        let value = PanelOpacity.clamped(opacity)
+        slider = NSSlider(
+            value: value * 100,
+            minValue: PanelOpacity.minimum * 100,
+            maxValue: PanelOpacity.maximum * 100,
+            target: nil,
+            action: nil
+        )
+        slider.isContinuous = true
+        slider.controlSize = .small
+
+        percent = NSTextField(labelWithString: PanelOpacity.percentLabel(for: value))
+        percent.font = .monospacedDigitSystemFont(ofSize: 11, weight: .medium)
+        percent.alignment = .right
+        percent.textColor = .secondaryLabelColor
+
+        super.init(frame: NSRect(x: 0, y: 0, width: 196, height: 28))
+        slider.target = self
+        slider.action = #selector(changed)
+        slider.frame = NSRect(x: 14, y: 4, width: 132, height: 20)
+        percent.frame = NSRect(x: 148, y: 6, width: 36, height: 16)
+        addSubview(slider)
+        addSubview(percent)
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    @objc private func changed() {
+        let value = PanelOpacity.clamped(slider.doubleValue / 100)
+        percent.stringValue = PanelOpacity.percentLabel(for: value)
+        onChange?(value)
     }
 }

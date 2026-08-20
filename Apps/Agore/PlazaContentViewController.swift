@@ -13,6 +13,7 @@ final class PlazaContentViewController: NSViewController {
     private let rounded: Bool
     private let statusField = NSTextField(labelWithString: "")
     private let actionButton = NSButton(title: "Connect Agents", target: nil, action: nil)
+    private let statusBar = NSView()
     private var cancellables: Set<AnyCancellable> = []
     private var refreshTimer: Timer?
     private var isActive = false
@@ -52,9 +53,7 @@ final class PlazaContentViewController: NSViewController {
         let size = contentSize
         let root = NSView(frame: NSRect(origin: .zero, size: size))
         root.wantsLayer = true
-        root.layer?.backgroundColor = NSColor(calibratedRed: 0.24, green: 0.20, blue: 0.16, alpha: rounded ? 0 : 0.92).cgColor
         if rounded {
-            root.layer?.backgroundColor = .clear
             root.layer?.cornerRadius = AgoreConstants.cornerRadius
             root.layer?.masksToBounds = true
         }
@@ -68,17 +67,16 @@ final class PlazaContentViewController: NSViewController {
         plazaView.autoresizingMask = [.width, .height]
         root.addSubview(plazaView)
 
-        let bar = NSView(frame: NSRect(x: 0, y: 0, width: size.width, height: AgoreConstants.statusHeight))
-        bar.wantsLayer = true
-        bar.layer?.backgroundColor = NSColor(calibratedRed: 0.16, green: 0.13, blue: 0.10, alpha: 0.55).cgColor
-        bar.autoresizingMask = [.width]
+        statusBar.frame = NSRect(x: 0, y: 0, width: size.width, height: AgoreConstants.statusHeight)
+        statusBar.wantsLayer = true
+        statusBar.autoresizingMask = [.width]
 
         statusField.font = NSFont.monospacedSystemFont(ofSize: 9, weight: .medium)
         statusField.textColor = NSColor(calibratedRed: 0.96, green: 0.93, blue: 0.86, alpha: 0.95)
         statusField.backgroundColor = .clear
         statusField.frame = NSRect(x: 8, y: 2, width: size.width - 120, height: 14)
         statusField.autoresizingMask = [.width]
-        bar.addSubview(statusField)
+        statusBar.addSubview(statusField)
 
         actionButton.bezelStyle = .inline
         actionButton.font = NSFont.monospacedSystemFont(ofSize: 9, weight: .semibold)
@@ -86,11 +84,12 @@ final class PlazaContentViewController: NSViewController {
         actionButton.action = #selector(installTapped)
         actionButton.frame = NSRect(x: size.width - 104, y: 1, width: 96, height: 16)
         actionButton.autoresizingMask = [.minXMargin]
-        bar.addSubview(actionButton)
+        statusBar.addSubview(actionButton)
 
-        root.addSubview(bar)
+        root.addSubview(statusBar)
         view = root
         preferredContentSize = size
+        applyChrome()
     }
 
     override func viewDidLoad() {
@@ -137,6 +136,31 @@ final class PlazaContentViewController: NSViewController {
     func apply(theme: PlazaTheme) {
         plazaView.apply(theme: theme)
         refresh()
+    }
+
+    func setOpacity(_ opacity: Double) {
+        applyChrome(PanelOpacity.visuals(for: opacity))
+    }
+
+    /// The square window stays a solid card. The strip's fill, floor and status bar all
+    /// move together so 100% is actually opaque instead of a faded window over a glass floor.
+    private func applyChrome(_ visuals: PanelOpacity.Visuals? = nil) {
+        let fill: CGFloat
+        let bar: CGFloat
+        let ground: CGFloat
+        if rounded {
+            let visuals = visuals ?? PanelOpacity.visuals(for: PanelOpacity.current)
+            fill = CGFloat(visuals.fillAlpha)
+            bar = CGFloat(visuals.barAlpha)
+            ground = CGFloat(visuals.groundAlpha)
+        } else {
+            fill = 0.92
+            bar = 0.55
+            ground = AgoreConstants.groundOpacity
+        }
+        view.layer?.backgroundColor = NSColor(calibratedRed: 0.24, green: 0.20, blue: 0.16, alpha: fill).cgColor
+        statusBar.layer?.backgroundColor = NSColor(calibratedRed: 0.16, green: 0.13, blue: 0.10, alpha: bar).cgColor
+        plazaView.setBackdropOpacity(ground)
     }
 
     /// A scene left paused renders nothing that was added while it slept, so becoming

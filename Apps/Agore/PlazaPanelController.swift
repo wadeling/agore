@@ -39,6 +39,7 @@ final class PlazaPanelController: NSObject, NSWindowDelegate {
         panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary]
         panel.delegate = self
         content.setActive(false)
+        content.setOpacity(PanelOpacity.current)
     }
 
     var isVisible: Bool {
@@ -72,6 +73,10 @@ final class PlazaPanelController: NSObject, NSWindowDelegate {
 
     func apply(theme: PlazaTheme) {
         content.apply(theme: theme)
+    }
+
+    func setOpacity(_ opacity: Double) {
+        content.setOpacity(opacity)
     }
 
     func setPinned(_ pinned: Bool) {

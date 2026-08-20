@@ -5,6 +5,7 @@ enum MainMenu {
     /// The style submenu is rebuilt every time it opens, because the same choice is also
     /// offered from the status item and whichever menu is opened second has to agree.
     @MainActor private static let styleMenuDelegate = StyleMenuDelegate()
+    @MainActor private static let opacityMenuDelegate = OpacityMenuDelegate()
 
     @MainActor static func make() -> NSMenu {
         let menu = NSMenu()
@@ -51,8 +52,14 @@ enum MainMenu {
         let styleItem = NSMenuItem(title: "Style", action: nil, keyEquivalent: "")
         styleItem.submenu = style
 
+        let opacity = NSMenu(title: "Opacity")
+        opacity.delegate = opacityMenuDelegate
+        let opacityItem = NSMenuItem(title: "Opacity", action: nil, keyEquivalent: "")
+        opacityItem.submenu = opacity
+
         let view = NSMenu()
         view.addItem(styleItem)
+        view.addItem(opacityItem)
         let item = NSMenuItem()
         item.submenu = view
         item.title = "View"
@@ -78,6 +85,20 @@ private final class StyleMenuDelegate: NSObject, NSMenuDelegate {
     }
 }
 
+@MainActor
+private final class OpacityMenuDelegate: NSObject, NSMenuDelegate {
+    func menuNeedsUpdate(_ menu: NSMenu) {
+        menu.removeAllItems()
+        let sliderItem = NSMenuItem()
+        let view = OpacitySliderView(opacity: PanelOpacity.current)
+        view.onChange = { value in
+            NSApp.changePlazaOpacity(value)
+        }
+        sliderItem.view = view
+        menu.addItem(sliderItem)
+    }
+}
+
 extension NSApplication {
     @MainActor
     @objc func showPlazaWindow() {
@@ -89,5 +110,10 @@ extension NSApplication {
         guard let raw = sender.representedObject as? String,
               let theme = PlazaTheme(rawValue: raw) else { return }
         (delegate as? AppDelegate)?.applyTheme(theme)
+    }
+
+    @MainActor
+    func changePlazaOpacity(_ opacity: Double) {
+        (delegate as? AppDelegate)?.applyOpacity(opacity)
     }
 }
