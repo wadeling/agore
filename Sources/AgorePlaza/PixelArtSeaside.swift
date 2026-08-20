@@ -128,18 +128,14 @@ extension PixelArt {
         case .day, .dusk:
             let sunX = geometry.isStrip ? width - 60 : width - 38
             let sunY = geometry.isStrip ? height - 4 : height - 26
-            if !geometry.isStrip {
-                canvas.disk(sunX, sunY, 8, tint.skyLow)
-            }
-            canvas.disk(sunX, sunY, geometry.isStrip ? 2 : 6, Shore.sun)
+            stampSun(&canvas, x: sunX, y: sunY, isStrip: geometry.isStrip, body: Shore.sun, halo: tint.skyLow)
         case .night:
             scatterStars(&canvas, geometry: geometry, above: skyLine + 4, color: Palette.star)
             // Starts in a gap the clouds leave empty. They drift now, so one may later
             // slide across the moon — which is what a sky does.
             let moonX = geometry.isStrip ? 30 : 100
             let moonY = height - (geometry.isStrip ? 5 : 22)
-            canvas.disk(moonX, moonY, geometry.isStrip ? 2 : 5, Palette.moon)
-            canvas.disk(moonX + 2, moonY + 2, geometry.isStrip ? 1 : 3, tint.sky)
+            stampMoon(&canvas, x: moonX, y: moonY, isStrip: geometry.isStrip, sky: tint.sky)
         }
     }
 

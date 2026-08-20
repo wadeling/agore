@@ -302,9 +302,42 @@ enum PixelArt {
             scatterStars(&canvas, geometry: geometry, above: horizon + band, color: Palette.star)
             let moonX = geometry.isStrip ? 28 : width - 22
             let moonY = min(height - 5, horizon + max(4, (height - horizon) / 2))
-            canvas.disk(moonX, moonY, geometry.isStrip ? 2 : 4, Palette.moon)
-            canvas.disk(moonX + 1, moonY + 1, geometry.isStrip ? 1 : 2, Palette.nightSky)
+            stampMoon(&canvas, x: moonX, y: moonY, isStrip: geometry.isStrip, sky: sky)
         }
+    }
+
+    /// A two-pixel `disk` is a diamond, and the usual second-disk bite misses it, so a
+    /// night "crescent" reads as a tiny sun. The strip stamps a sickle; the courtyard
+    /// still has room for overlapping disks.
+    static func stampMoon(_ canvas: inout PixelCanvas, x: Int, y: Int, isStrip: Bool, sky: UInt32) {
+        if isStrip {
+            let sickle: [(Int, Int)] = [
+                (0, 2), (1, 2), (2, 2),
+                (-1, 1), (0, 1),
+                (-1, 0),
+                (-1, -1), (0, -1),
+                (0, -2), (1, -2), (2, -2),
+            ]
+            for (dx, dy) in sickle {
+                canvas.set(x + dx, y + dy, Palette.moon)
+            }
+            return
+        }
+        canvas.disk(x, y, 5, Palette.moon)
+        canvas.disk(x + 3, y, 4, sky)
+    }
+
+    /// Cardinal rays on the strip, otherwise the same two-pixel disk as the old moon.
+    static func stampSun(_ canvas: inout PixelCanvas, x: Int, y: Int, isStrip: Bool, body: UInt32, halo: UInt32?) {
+        if let halo, !isStrip {
+            canvas.disk(x, y, 8, halo)
+        }
+        canvas.disk(x, y, isStrip ? 2 : 6, body)
+        guard isStrip else { return }
+        canvas.set(x, y + 3, body)
+        canvas.set(x, y - 3, body)
+        canvas.set(x + 3, y, body)
+        canvas.set(x - 3, y, body)
     }
 
     /// Deterministic so a repainted background keeps the same night sky.
