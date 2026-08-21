@@ -79,7 +79,7 @@ bar, and remembered across launches:
 | Greek Agora | Marble paving under a colonnade, a fountain, olive trees, stone benches | A pixel person, with a couple of stray cats loafing about |
 | Sunny Seaside | A beach under a big sky, surf and a bay, palms, a parasol, beach towels | A pixel cat, a different coat for each agent |
 | Antonovka Stop | A country road through sunflowers, a bus shelter under a wide sky | A pixel rabbit, a different outfit for each agent |
-| Koriko Sky | Open blue sky, a clock tower, scattered drifting clouds | A witch girl on a broom |
+| Koriko Sky | Open blue sky, a clock tower, scattered drifting clouds | A witch girl in a pointed hat, flying a broom |
 
 All four keep the same daylight cycle and read the same activity; only the inhabitants change,
 so a cat, a rabbit or a witch sits, hops or flies about and curls up asleep wherever a person

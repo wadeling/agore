@@ -108,7 +108,7 @@ struct PlazaGeometry: Hashable, Sendable {
         case (.agora, .strip): return 16
         case (.agora, .courtyard): return 28
         case (.seaside, .strip), (.antonovka, .strip): return 12
-        case (.koriko, .strip): return 14
+        case (.koriko, .strip): return 20
         case (.seaside, .courtyard), (.antonovka, .courtyard): return 24
         case (.koriko, .courtyard): return 28
         }
@@ -120,7 +120,7 @@ struct PlazaGeometry: Hashable, Sendable {
         case (.agora, .courtyard): return 170
         case (.seaside, .strip): return 20
         case (.antonovka, .strip): return 32
-        case (.koriko, .strip): return 36
+        case (.koriko, .strip): return 34
         case (.seaside, .courtyard): return 106
         case (.antonovka, .courtyard): return 144
         case (.koriko, .courtyard): return 190
@@ -149,7 +149,9 @@ struct PlazaGeometry: Hashable, Sendable {
         case (.seaside, .strip), (.antonovka, .strip):
             return stripLanes.map { CGPoint(x: $0, y: CGFloat(groundY + 8)) }
         case (.koriko, .strip):
-            let heights: [CGFloat] = [20, 26, 18, 30, 22, 16, 28, 24]
+            // A witch is the tallest actor on any plaza and carries her name below
+            // her boots, so she flies higher up the strip than a rabbit walks.
+            let heights: [CGFloat] = [25, 30, 23, 33, 27, 24, 31, 28]
             return zip(stripLanes, heights).map { CGPoint(x: $0, y: $1) }
         case (.seaside, .courtyard), (.antonovka, .courtyard):
             return [
