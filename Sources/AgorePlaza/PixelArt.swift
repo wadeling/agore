@@ -46,6 +46,21 @@ enum Palette {
         return (UInt32(alpha) << 24) | (b << 16) | (g << 8) | r
     }
 
+    /// `t` steps of `span` from one colour towards another, opaque. Used both to
+    /// run a gradient down a sky and to sit a colour between two others.
+    static func mix(_ a: UInt32, _ b: UInt32, _ t: Int, of span: Int) -> UInt32 {
+        guard span > 0 else { return a }
+        let step = min(max(t, 0), span)
+        var out: UInt32 = 255 << 24
+        for shift in stride(from: 0, through: 16, by: 8) {
+            let from = Int((a >> UInt32(shift)) & 0xFF)
+            let to = Int((b >> UInt32(shift)) & 0xFF)
+            let value = from + (to - from) * step / span
+            out |= UInt32(value) << UInt32(shift)
+        }
+        return out
+    }
+
     static func tunic(_ hash: Int) -> UInt32 {
         let colors: [UInt32] = [
             rgba(0xC45C26, 255),
@@ -333,24 +348,37 @@ enum PixelArt {
         canvas.disk(x + 3, y, 4, sky)
     }
 
-    /// Eight short rays around a round core, with a one-pixel gap, so a strip sun
-    /// reads as ☀️ rather than a plus-shaped star or a square.
-    static func stampSun(_ canvas: inout PixelCanvas, x: Int, y: Int, isStrip: Bool, body: UInt32, halo: UInt32?) {
-        if let halo, !isStrip {
-            canvas.disk(x, y, 8, halo)
+    /// A round core inside a glow that fades ring by ring into the sky it hangs
+    /// in. Rays are deliberately left off: eight loose pixels around a small core
+    /// read as a sparkle rather than as the sun. Dusk warms the core towards the
+    /// colour of its own horizon.
+    static func stampSun(
+        _ canvas: inout PixelCanvas,
+        x: Int,
+        y: Int,
+        isStrip: Bool,
+        body: UInt32,
+        halo: UInt32?,
+        period: PlazaPeriod
+    ) {
+        let sky = halo ?? body
+        // Warmed towards lantern gold rather than towards the terracotta horizon:
+        // against a violet dusk sky the horizon tone goes muddy, gold does not.
+        let core = period == .dusk ? Palette.mix(body, Palette.lantern, 3, of: 5) : body
+        let radius = isStrip ? 2 : 6
+        let rings = isStrip ? 3 : 4
+        // Outermost first, each one a step closer to the sky, so a single flat
+        // halo does not read as a ring drawn around the sun.
+        for ring in stride(from: rings, through: 1, by: -1) {
+            canvas.disk(x, y, radius + ring, Palette.mix(core, sky, ring, of: rings + 1))
         }
+        canvas.disk(x, y, radius, core)
+        let glint = Palette.mix(core, Palette.star, 1, of: 2)
         if isStrip {
-            canvas.disk(x, y, 2, body)
-            let rays: [(Int, Int)] = [
-                (0, 4), (0, -4), (4, 0), (-4, 0),
-                (3, 3), (3, -3), (-3, 3), (-3, -3),
-            ]
-            for (dx, dy) in rays {
-                canvas.set(x + dx, y + dy, body)
-            }
-            return
+            canvas.set(x - 1, y + 1, glint)
+        } else {
+            canvas.disk(x - 2, y + 2, 2, glint)
         }
-        canvas.disk(x, y, 6, body)
     }
 
     /// Deterministic so a repainted background keeps the same night sky.

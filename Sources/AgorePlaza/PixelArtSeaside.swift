@@ -128,7 +128,15 @@ extension PixelArt {
         case .day, .dusk:
             let sunX = geometry.isStrip ? width - 60 : width - 38
             let sunY = geometry.isStrip ? height - 6 : height - 26
-            stampSun(&canvas, x: sunX, y: sunY, isStrip: geometry.isStrip, body: Shore.sun, halo: tint.skyLow)
+            stampSun(
+                &canvas,
+                x: sunX,
+                y: sunY,
+                isStrip: geometry.isStrip,
+                body: Shore.sun,
+                halo: tint.skyLow,
+                period: period
+            )
         case .night:
             scatterStars(&canvas, geometry: geometry, above: skyLine + 4, color: Palette.star)
             // Starts in a gap the clouds leave empty. They drift now, so one may later

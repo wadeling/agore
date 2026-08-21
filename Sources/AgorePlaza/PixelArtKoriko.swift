@@ -73,7 +73,18 @@ extension PixelArt {
         case .day, .dusk:
             let sunX = geometry.isStrip ? width - 52 : width - 36
             let sunY = geometry.isStrip ? height - 6 : height - 30
-            stampSun(&canvas, x: sunX, y: sunY, isStrip: geometry.isStrip, body: Sky.sun, halo: tint.skyLow)
+            // Elsewhere the sun sits just over the horizon, but this sky is all
+            // gradient and the sun hangs near the top of it, so the haze has to
+            // dissolve into the shade of sky it is actually sitting in.
+            stampSun(
+                &canvas,
+                x: sunX,
+                y: sunY,
+                isStrip: geometry.isStrip,
+                body: Sky.sun,
+                halo: Palette.mix(tint.skyLow, tint.sky, sunY, of: max(1, height - 1)),
+                period: period
+            )
         case .night:
             scatterStars(&canvas, geometry: geometry, above: 4, color: Palette.star)
             let moonX = geometry.isStrip ? 30 : 100
@@ -91,17 +102,8 @@ extension PixelArt {
     ) {
         let span = max(1, height - 1)
         for y in 0..<height {
-            canvas.fill(0, y, width, 1, lerpColor(low, high, t: y, span: span))
+            canvas.fill(0, y, width, 1, Palette.mix(low, high, y, of: span))
         }
-    }
-
-    private static func lerpColor(_ a: UInt32, _ b: UInt32, t: Int, span: Int) -> UInt32 {
-        let ar = Int(a & 0xFF), ag = Int((a >> 8) & 0xFF), ab = Int((a >> 16) & 0xFF)
-        let br = Int(b & 0xFF), bg = Int((b >> 8) & 0xFF), bb = Int((b >> 16) & 0xFF)
-        let r = ar + (br - ar) * t / span
-        let g = ag + (bg - ag) * t / span
-        let bl = ab + (bb - ab) * t / span
-        return (UInt32(255) << 24) | (UInt32(bl) << 16) | (UInt32(g) << 8) | UInt32(r)
     }
 
     static func buildClockTowerFrame(_ wobble: Int) -> SKTexture {

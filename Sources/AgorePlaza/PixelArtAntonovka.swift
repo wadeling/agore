@@ -105,7 +105,15 @@ extension PixelArt {
         case .day, .dusk:
             let sunX = geometry.isStrip ? width - 48 : width - 36
             let sunY = geometry.isStrip ? height - 6 : height - 28
-            stampSun(&canvas, x: sunX, y: sunY, isStrip: geometry.isStrip, body: Meadow.sun, halo: tint.skyLow)
+            stampSun(
+                &canvas,
+                x: sunX,
+                y: sunY,
+                isStrip: geometry.isStrip,
+                body: Meadow.sun,
+                halo: tint.skyLow,
+                period: period
+            )
         case .night:
             scatterStars(&canvas, geometry: geometry, above: horizon + 4, color: Palette.star)
             let moonX = geometry.isStrip ? 28 : 92
