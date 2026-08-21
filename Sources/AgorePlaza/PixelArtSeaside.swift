@@ -127,7 +127,7 @@ extension PixelArt {
         switch period {
         case .day, .dusk:
             let sunX = geometry.isStrip ? width - 60 : width - 38
-            let sunY = geometry.isStrip ? height - 4 : height - 26
+            let sunY = geometry.isStrip ? height - 6 : height - 26
             stampSun(&canvas, x: sunX, y: sunY, isStrip: geometry.isStrip, body: Shore.sun, halo: tint.skyLow)
         case .night:
             scatterStars(&canvas, geometry: geometry, above: skyLine + 4, color: Palette.star)
@@ -139,10 +139,24 @@ extension PixelArt {
         }
     }
 
-    static func cloud(_ spec: CloudSpec, period: PlazaPeriod) -> SKTexture {
+    static func cloud(_ spec: CloudSpec, theme: PlazaTheme, period: PlazaPeriod) -> SKTexture {
         let lump = max(2, spec.size)
-        return cached(.cloud(size: lump, shape: spec.shape, period: period)) {
-            buildCloud(size: lump, shape: spec.shape, tint: Shore.tint(for: period))
+        return cached(.cloud(theme: theme, size: lump, shape: spec.shape, period: period)) {
+            buildCloud(size: lump, shape: spec.shape, fill: cloudFill(theme: theme, period: period), shade: cloudShade(theme: theme, period: period))
+        }
+    }
+
+    private static func cloudFill(theme: PlazaTheme, period: PlazaPeriod) -> UInt32 {
+        switch theme {
+        case .antonovka: return Meadow.tint(for: period).cloud
+        default: return Shore.tint(for: period).cloud
+        }
+    }
+
+    private static func cloudShade(theme: PlazaTheme, period: PlazaPeriod) -> UInt32 {
+        switch theme {
+        case .antonovka: return Meadow.tint(for: period).cloudShade
+        default: return Shore.tint(for: period).cloudShade
         }
     }
 
@@ -237,7 +251,7 @@ extension PixelArt {
         )
     }
 
-    private static func buildCloud(size: Int, shape: CloudShape, tint: Shore.Tint) -> SKTexture {
+    private static func buildCloud(size: Int, shape: CloudShape, fill: UInt32, shade: UInt32) -> SKTexture {
         let metrics = cloudMetrics(size, shape: shape)
         var canvas = PixelCanvas(width: metrics.width, height: metrics.height, fill: Palette.clear)
         drawCloud(
@@ -246,7 +260,8 @@ extension PixelArt {
             cy: metrics.originY,
             size: size,
             shape: shape,
-            tint: tint
+            fill: fill,
+            shade: shade
         )
         return canvas.texture()
     }
@@ -257,14 +272,15 @@ extension PixelArt {
         cy: Int,
         size: Int,
         shape: CloudShape,
-        tint: Shore.Tint
+        fill: UInt32,
+        shade: UInt32
     ) {
         let r = max(2, size)
         let lumps = lumps(size: size, shape: shape)
         var left = cx
         var right = cx
         for lump in lumps {
-            canvas.disk(cx + lump.dx, cy + lump.dy, lump.r, tint.cloud)
+            canvas.disk(cx + lump.dx, cy + lump.dy, lump.r, fill)
             left = min(left, cx + lump.dx - lump.r)
             right = max(right, cx + lump.dx + lump.r + 1)
         }
@@ -274,8 +290,8 @@ extension PixelArt {
         case .twin: baseH = max(2, r / 3)
         default: baseH = max(2, r / 2)
         }
-        canvas.fill(left, cy, max(1, right - left), baseH, tint.cloud)
-        canvas.fill(left, cy, max(1, right - left), 1, tint.cloudShade)
+        canvas.fill(left, cy, max(1, right - left), baseH, fill)
+        canvas.fill(left, cy, max(1, right - left), 1, shade)
     }
 
     private static func drawSea(

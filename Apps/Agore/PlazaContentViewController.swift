@@ -14,12 +14,16 @@ final class PlazaContentViewController: NSViewController {
     /// The courtyard is a document: it only needs to move while Agore is frontmost.
     /// The strip is a companion overlay, so it keeps ticking while you work elsewhere.
     private let pausesWhenInactive: Bool
+    /// The strip is too short to spare a permanent chrome band; the courtyard has room
+    /// and keeps the line in view.
+    private let hidesStatusUntilHover: Bool
     private let statusField = NSTextField(labelWithString: "")
     private let actionButton = NSButton(title: "Connect Agents", target: nil, action: nil)
     private let statusBar = NSView()
     private var cancellables: Set<AnyCancellable> = []
     private var refreshTimer: Timer?
     private var isActive = false
+    private var statusRevealed = false
 
     init(
         store: PresenceStore,
@@ -33,13 +37,11 @@ final class PlazaContentViewController: NSViewController {
         self.contentSize = size
         self.rounded = rounded
         self.pausesWhenInactive = layout == .courtyard
-        let plazaFrame = NSRect(
-            x: 0,
-            y: AgoreConstants.statusHeight,
-            width: size.width,
-            height: max(AgoreConstants.plazaHeight, size.height - AgoreConstants.statusHeight)
+        self.hidesStatusUntilHover = layout == .strip
+        self.plazaView = PlazaView(
+            frame: Self.plazaFrame(size: size, overlayStatus: layout == .strip),
+            layout: layout
         )
-        self.plazaView = PlazaView(frame: plazaFrame, layout: layout)
         self.plazaView.setPaused(true)
         super.init(nibName: nil, bundle: nil)
     }
@@ -55,25 +57,34 @@ final class PlazaContentViewController: NSViewController {
 
     override func loadView() {
         let size = contentSize
-        let root = NSView(frame: NSRect(origin: .zero, size: size))
+        let root: NSView
+        if hidesStatusUntilHover {
+            let hover = StatusHoverView(frame: NSRect(origin: .zero, size: size))
+            hover.bandHeight = AgoreConstants.statusHeight
+            hover.onBand = { [weak self] _ in
+                self?.syncStatusHoverFromPointer()
+            }
+            root = hover
+        } else {
+            root = NSView(frame: NSRect(origin: .zero, size: size))
+        }
         root.wantsLayer = true
         if rounded {
             root.layer?.cornerRadius = AgoreConstants.cornerRadius
             root.layer?.masksToBounds = true
         }
 
-        plazaView.frame = NSRect(
-            x: 0,
-            y: AgoreConstants.statusHeight,
-            width: size.width,
-            height: max(AgoreConstants.plazaHeight, size.height - AgoreConstants.statusHeight)
-        )
+        plazaView.frame = Self.plazaFrame(size: size, overlayStatus: hidesStatusUntilHover)
         plazaView.autoresizingMask = [.width, .height]
         root.addSubview(plazaView)
 
         statusBar.frame = NSRect(x: 0, y: 0, width: size.width, height: AgoreConstants.statusHeight)
         statusBar.wantsLayer = true
         statusBar.autoresizingMask = [.width]
+        if hidesStatusUntilHover {
+            statusBar.alphaValue = 0
+            statusBar.isHidden = true
+        }
 
         statusField.font = NSFont.monospacedSystemFont(ofSize: 9, weight: .medium)
         statusField.textColor = NSColor(calibratedRed: 0.96, green: 0.93, blue: 0.86, alpha: 0.95)
@@ -94,6 +105,11 @@ final class PlazaContentViewController: NSViewController {
         view = root
         preferredContentSize = size
         applyChrome()
+        if hidesStatusUntilHover {
+            plazaView.onPointerChange = { [weak self] in
+                self?.syncStatusHoverFromPointer()
+            }
+        }
     }
 
     override func viewDidLoad() {
@@ -112,6 +128,7 @@ final class PlazaContentViewController: NSViewController {
         refreshTimer = Timer.scheduledTimer(withTimeInterval: 2, repeats: true) { [weak self] _ in
             self?.syncRunning()
             self?.refresh()
+            self?.syncStatusHoverFromPointer()
         }
         refreshTimer?.tolerance = 0.5
         refresh()
@@ -120,6 +137,7 @@ final class PlazaContentViewController: NSViewController {
     override func viewDidAppear() {
         super.viewDidAppear()
         syncRunning()
+        syncStatusHoverFromPointer()
     }
 
     /// Both surfaces stay alive for the whole session, so a strip nobody can see would
@@ -128,6 +146,7 @@ final class PlazaContentViewController: NSViewController {
     override func viewDidDisappear() {
         super.viewDidDisappear()
         setActive(false)
+        setStatusRevealed(false)
     }
 
     /// SpriteKit pauses an occluded window on its own and does not always hand it back,
@@ -173,6 +192,47 @@ final class PlazaContentViewController: NSViewController {
 
     private func syncRunning() {
         setActive(shouldRun)
+    }
+
+    private static func plazaFrame(size: CGSize, overlayStatus: Bool) -> NSRect {
+        if overlayStatus {
+            return NSRect(origin: .zero, size: size)
+        }
+        return NSRect(
+            x: 0,
+            y: AgoreConstants.statusHeight,
+            width: size.width,
+            height: max(AgoreConstants.plazaHeight, size.height - AgoreConstants.statusHeight)
+        )
+    }
+
+    private func setStatusRevealed(_ revealed: Bool) {
+        guard hidesStatusUntilHover, revealed != statusRevealed else { return }
+        statusRevealed = revealed
+        if revealed {
+            statusBar.isHidden = false
+        }
+        NSAnimationContext.runAnimationGroup({ context in
+            context.duration = revealed ? 0.12 : 0.18
+            context.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+            statusBar.animator().alphaValue = revealed ? 1 : 0
+        }, completionHandler: { [weak self] in
+            guard let self, !self.statusRevealed else { return }
+            self.statusBar.isHidden = true
+        })
+    }
+
+    /// Screen location rather than hit-testing: once the bar is showing it sits on
+    /// top of the plaza, and a mouse-exited from the SKView would otherwise hide it
+    /// while the pointer is still on the line.
+    private func syncStatusHoverFromPointer() {
+        guard hidesStatusUntilHover else { return }
+        guard let window = view.window, window.isVisible else {
+            setStatusRevealed(false)
+            return
+        }
+        let point = view.convert(window.convertPoint(fromScreen: NSEvent.mouseLocation), from: nil)
+        setStatusRevealed(view.bounds.contains(point) && point.y <= AgoreConstants.statusHeight)
     }
 
     func apply(theme: PlazaTheme) {
@@ -253,4 +313,42 @@ final class PlazaContentViewController: NSViewController {
         formatter.dateFormat = "HH:mm"
         return formatter
     }()
+}
+
+/// Tracking lives on the root rather than the status bar so a hidden bar cannot
+/// swallow clicks, and so the pointer still counts when Agore is not frontmost.
+private final class StatusHoverView: NSView {
+    var bandHeight: CGFloat = 0
+    var onBand: ((Bool) -> Void)?
+
+    override func updateTrackingAreas() {
+        super.updateTrackingAreas()
+        trackingAreas.forEach(removeTrackingArea)
+        addTrackingArea(NSTrackingArea(
+            rect: bounds,
+            options: [.mouseEnteredAndExited, .mouseMoved, .activeAlways, .inVisibleRect],
+            owner: self,
+            userInfo: nil
+        ))
+    }
+
+    override func mouseEntered(with event: NSEvent) {
+        super.mouseEntered(with: event)
+        report(event)
+    }
+
+    override func mouseMoved(with event: NSEvent) {
+        super.mouseMoved(with: event)
+        report(event)
+    }
+
+    override func mouseExited(with event: NSEvent) {
+        super.mouseExited(with: event)
+        onBand?(false)
+    }
+
+    private func report(_ event: NSEvent) {
+        let location = convert(event.locationInWindow, from: nil)
+        onBand?(location.y <= bandHeight)
+    }
 }

@@ -65,21 +65,24 @@ item menu.
 
 The bar along the bottom shows how many people are on the plaza (your own agents included,
 one each), what this Mac as a whole is up to, which agents are wired up
-(`cursor on · opencode off`), and when the last event arrived.
+(`cursor on · opencode off`), and when the last event arrived. On the strip it stays
+hidden until the pointer rests on the bottom edge, so the plaza can use the full card;
+the courtyard window keeps it in view.
 
 ### Styles
 
-Two worlds, picked from **Style** in the status item menu or **View → Style** in the menu
+Three worlds, picked from **Style** in the status item menu or **View → Style** in the menu
 bar, and remembered across launches:
 
 | Style | The plaza is | You are |
 | --- | --- | --- |
 | Greek Agora | Marble paving under a colonnade, a fountain, olive trees, stone benches | A pixel person, with a couple of stray cats loafing about |
 | Sunny Seaside | A beach under a big sky, surf and a bay, palms, a parasol, beach towels | A pixel cat, a different coat for each agent |
+| Antonovka Stop | A country road through sunflowers, a bus shelter under a wide sky | A pixel rabbit, a different outfit for each agent |
 
-Both keep the same daylight cycle and read the same activity; only the inhabitants change,
-so a cat sits, pads about and curls up asleep wherever a person would have stood, strolled
-and lain down. Switching styles repaints the plaza and everyone walks back in.
+All three keep the same daylight cycle and read the same activity; only the inhabitants change,
+so a cat or a rabbit sits, hops about and curls up asleep wherever a person would have stood,
+strolled and lain down. Switching styles repaints the plaza and everyone walks back in.
 
 ### What the pixel people are doing
 
@@ -96,7 +99,7 @@ and lain down. Switching styles repaints the plaza and everyone walks back in.
 Tool names are matched case-insensitively, because Cursor spells them `Read` and opencode
 spells them `read`.
 
-One pixel person — or one cat — per client *and agent*, not per conversation: a Mac running
+One pixel person — or one cat, or one rabbit — per client *and agent*, not per conversation: a Mac running
 Cursor and opencode side by side puts two of them on the plaza, named `wade-cs` and
 `wade-oc` after your nickname (default: this Mac's hostname) and which agent each one is.
 A name has to stay narrow enough to read the people either side of it, so the agent is a
@@ -191,7 +194,7 @@ Tests/                       unit tests for the mapping, parsing, store, and bot
 and bump `AgoreConstants.opencodePluginVersion`, or opencode configs will keep loading the
 copy they already have.
 
-The pixel world is 360×42 and the strip renders at exactly 2×, so every pixel lands on an
+The pixel world is 360×51 and the strip renders at exactly 2×, so every pixel lands on an
 integer boundary. Changing one without the other will make the art blurry.
 
 ### Make targets

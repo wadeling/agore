@@ -226,9 +226,11 @@ enum PixelArt {
         case bubble
         case bird(theme: PlazaTheme, phase: Int)
         case leaf(theme: PlazaTheme)
-        case cloud(size: Int, shape: CloudShape, period: PlazaPeriod)
+        case cloud(theme: PlazaTheme, size: Int, shape: CloudShape, period: PlazaPeriod)
         case cat(variant: Int, pose: CatPose, phase: Int, small: Bool)
         case catSleeper(variant: Int, phase: Int)
+        case rabbit(variant: Int, pose: RabbitPose, phase: Int, small: Bool)
+        case rabbitSleeper(variant: Int, phase: Int)
         case character(skin: UInt32, hair: UInt32, tunic: UInt32, kind: ActivityKind, phase: Int, small: Bool)
     }
 
@@ -244,6 +246,7 @@ enum PixelArt {
             switch geometry.theme {
             case .agora: return buildAgoraBackground(geometry, period: period)
             case .seaside: return buildSeasideBackground(geometry, period: period)
+            case .antonovka: return buildAntonovkaBackground(geometry, period: period)
             }
         }
     }
@@ -327,17 +330,24 @@ enum PixelArt {
         canvas.disk(x + 3, y, 4, sky)
     }
 
-    /// Cardinal rays on the strip, otherwise the same two-pixel disk as the old moon.
+    /// Eight short rays around a round core, with a one-pixel gap, so a strip sun
+    /// reads as ☀️ rather than a plus-shaped star or a square.
     static func stampSun(_ canvas: inout PixelCanvas, x: Int, y: Int, isStrip: Bool, body: UInt32, halo: UInt32?) {
         if let halo, !isStrip {
             canvas.disk(x, y, 8, halo)
         }
-        canvas.disk(x, y, isStrip ? 2 : 6, body)
-        guard isStrip else { return }
-        canvas.set(x, y + 3, body)
-        canvas.set(x, y - 3, body)
-        canvas.set(x + 3, y, body)
-        canvas.set(x - 3, y, body)
+        if isStrip {
+            canvas.disk(x, y, 2, body)
+            let rays: [(Int, Int)] = [
+                (0, 4), (0, -4), (4, 0), (-4, 0),
+                (3, 3), (3, -3), (-3, 3), (-3, -3),
+            ]
+            for (dx, dy) in rays {
+                canvas.set(x + dx, y + dy, body)
+            }
+            return
+        }
+        canvas.disk(x, y, 6, body)
     }
 
     /// Deterministic so a repainted background keeps the same night sky.
@@ -548,6 +558,8 @@ enum PixelArt {
             return CGPoint(x: CGFloat(tree.x), y: CGFloat(tree.y + [3, 5, 7][size] * 2 + 3))
         case .seaside:
             return CGPoint(x: CGFloat(tree.x), y: CGFloat(tree.y + [6, 9, 12][size] + 1))
+        case .antonovka:
+            return CGPoint(x: CGFloat(tree.x), y: CGFloat(tree.y + [4, 7, 11][size] + [2, 3, 4][size]))
         }
     }
 
@@ -576,6 +588,7 @@ enum PixelArt {
             switch theme {
             case .agora: return buildFountainFrame(wobble)
             case .seaside: return buildParasolFrame(wobble)
+            case .antonovka: return buildBusStopFrame(wobble)
             }
         }
     }
@@ -634,9 +647,9 @@ enum PixelArt {
         return canvas.texture()
     }
 
-    /// A theme decides who inhabits the plaza: people on the agora, cats on the shore.
-    /// Mapping an activity onto a pose lives here, so an actor only has to say whether it
-    /// is currently on the move.
+    /// A theme decides who inhabits the plaza: people on the agora, cats on the shore,
+    /// rabbits at the stop. Mapping an activity onto a pose lives here, so an actor
+    /// only has to say whether it is currently on the move.
     static func actorSize(theme: PlazaTheme, small: Bool) -> CGSize {
         switch theme {
         case .agora:
@@ -645,6 +658,8 @@ enum PixelArt {
                 : CGSize(width: characterWidth, height: characterHeight)
         case .seaside:
             return catSize(small: small)
+        case .antonovka:
+            return rabbitSize(small: small)
         }
     }
 
@@ -664,6 +679,8 @@ enum PixelArt {
             return character(hash: hash, kind: visualKind, frame: frame, small: small)
         case .seaside:
             return cat(variant: hash, pose: moving ? .walking : .sitting, frame: frame, small: small)
+        case .antonovka:
+            return rabbit(variant: hash, pose: moving ? .walking : .sitting, frame: frame, small: small)
         }
     }
 
@@ -671,6 +688,7 @@ enum PixelArt {
         switch theme {
         case .agora: return sleeper(hash: hash, frame: frame)
         case .seaside: return catSleeper(variant: hash, frame: frame)
+        case .antonovka: return rabbitSleeper(variant: hash, frame: frame)
         }
     }
 
@@ -678,6 +696,7 @@ enum PixelArt {
         switch theme {
         case .agora: return CGSize(width: sleeperWidth, height: sleeperHeight)
         case .seaside: return CGSize(width: catSleeperWidth, height: catSleeperHeight)
+        case .antonovka: return CGSize(width: rabbitSleeperWidth, height: rabbitSleeperHeight)
         }
     }
 
@@ -768,9 +787,11 @@ enum PixelArt {
 
     private static func buildBird(theme: PlazaTheme, flap: Int) -> SKTexture {
         var canvas = PixelCanvas(width: 7, height: 5, fill: Palette.clear)
-        // A gull is the same silhouette in a lighter feather, so the shore keeps its own
-        // bird without a second flight path.
-        let feather = theme == .seaside ? Shore.gull : Palette.ink
+        let feather: UInt32
+        switch theme {
+        case .seaside, .antonovka: feather = Shore.gull
+        case .agora: feather = Palette.ink
+        }
         canvas.fill(2, 2, 3, 1, feather)
         canvas.set(5, 2, feather)
         canvas.set(1, 2, feather)
@@ -783,7 +804,7 @@ enum PixelArt {
             canvas.fill(0, 2, 2, 1, feather)
             canvas.fill(5, 2, 2, 1, feather)
         }
-        if theme == .seaside {
+        if theme == .seaside || theme == .antonovka {
             canvas.set(0, 2, Palette.ink)
             canvas.set(6, 2, Palette.ink)
         }
@@ -805,6 +826,10 @@ enum PixelArt {
             canvas.set(1, 1, Shore.frond)
             canvas.set(1, 2, Shore.frondLight)
             canvas.set(0, 1, Shore.frondDark)
+        case .antonovka:
+            canvas.set(1, 1, Meadow.petal)
+            canvas.set(1, 2, Meadow.petalLight)
+            canvas.set(0, 1, Meadow.seed)
         }
         return canvas.texture()
     }

@@ -11,6 +11,9 @@ public final class PlazaView: SKView {
     /// An idle strip still has to paint once when it appears, or SpriteKit would
     /// leave a blank metal view until someone walked.
     private var needsFirstFrame = true
+    /// The strip's status line watches the same pointer the scene does, because a
+    /// non-frontmost panel does not always deliver mouse-moved events to its parent.
+    public var onPointerChange: (() -> Void)?
 
     public init(frame frameRect: NSRect, layout: PlazaLayout, theme: PlazaTheme = .current) {
         plazaScene = PlazaScene(layout: layout, theme: theme)
@@ -66,6 +69,7 @@ public final class PlazaView: SKView {
         super.mouseEntered(with: event)
         plazaScene.pointerInside = true
         applyRunState()
+        onPointerChange?()
     }
 
     public override func mouseExited(with event: NSEvent) {
@@ -73,11 +77,13 @@ public final class PlazaView: SKView {
         plazaScene.pointerInside = false
         plazaScene.hover(nil)
         applyRunState()
+        onPointerChange?()
     }
 
     public override func mouseMoved(with event: NSEvent) {
         super.mouseMoved(with: event)
         plazaScene.refreshHover()
+        onPointerChange?()
     }
 
     public func apply(theme: PlazaTheme) {
@@ -130,6 +136,7 @@ public final class PlazaView: SKView {
         }
         let inView = convert(window.convertPoint(fromScreen: NSEvent.mouseLocation), from: nil)
         plazaScene.pointerInside = bounds.contains(inView)
+        onPointerChange?()
     }
 
     private func attachSceneIfNeeded() {

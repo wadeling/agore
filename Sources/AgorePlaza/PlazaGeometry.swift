@@ -47,34 +47,37 @@ struct PlazaGeometry: Hashable, Sendable {
     var worldHeight: Int { layout.worldHeight }
     var isStrip: Bool { layout == .strip }
 
-    /// Where the ground stops. Above it the agora shows its colonnade and the shore
-    /// shows open water, and in both cases actors stay below the line.
+    /// Where the ground stops. Above it the agora shows its colonnade, the shore
+    /// shows open water, and the stop shows sky over the sunflower field; actors
+    /// stay below the line in every world.
     var horizonY: Int {
         switch (theme, layout) {
         case (.agora, .strip): return 28
         case (.agora, .courtyard): return 196
         case (.seaside, .strip): return 26
+        case (.antonovka, .strip): return 38
         case (.seaside, .courtyard): return 120
+        case (.antonovka, .courtyard): return 160
         }
     }
 
-    /// A near edge for the paving band / dry sand line.
+    /// A near edge for the paving band / dry sand line / roadside verge.
     var groundY: Int {
         switch (theme, layout) {
         case (.agora, .strip): return 12
         case (.agora, .courtyard): return 48
-        case (.seaside, .strip): return 10
-        case (.seaside, .courtyard): return 40
+        case (.seaside, .strip), (.antonovka, .strip): return 10
+        case (.seaside, .courtyard), (.antonovka, .courtyard): return 40
         }
     }
 
-    /// Fountain on the agora, parasol on the shore: the one prop actors walk around.
+    /// Fountain, parasol, or bus shelter: the one prop actors walk around.
     var centerpieceCenter: CGPoint {
         switch (theme, layout) {
         case (.agora, .strip): return CGPoint(x: 180, y: 12)
         case (.agora, .courtyard): return CGPoint(x: 120, y: 88)
-        case (.seaside, .strip): return CGPoint(x: 180, y: 11)
-        case (.seaside, .courtyard): return CGPoint(x: 120, y: 82)
+        case (.seaside, .strip), (.antonovka, .strip): return CGPoint(x: 180, y: 11)
+        case (.seaside, .courtyard), (.antonovka, .courtyard): return CGPoint(x: 120, y: 82)
         }
     }
 
@@ -87,7 +90,8 @@ struct PlazaGeometry: Hashable, Sendable {
         case (.agora, .strip): return 0...28
         case (.agora, .courtyard): return 72...108
         case (.seaside, .strip): return 0...24
-        case (.seaside, .courtyard): return 66...102
+        case (.antonovka, .strip): return 0...28
+        case (.seaside, .courtyard), (.antonovka, .courtyard): return 66...102
         }
     }
 
@@ -95,8 +99,8 @@ struct PlazaGeometry: Hashable, Sendable {
         switch (theme, layout) {
         case (.agora, .strip): return 16
         case (.agora, .courtyard): return 28
-        case (.seaside, .strip): return 12
-        case (.seaside, .courtyard): return 24
+        case (.seaside, .strip), (.antonovka, .strip): return 12
+        case (.seaside, .courtyard), (.antonovka, .courtyard): return 24
         }
     }
 
@@ -105,12 +109,14 @@ struct PlazaGeometry: Hashable, Sendable {
         case (.agora, .strip): return 24
         case (.agora, .courtyard): return 170
         case (.seaside, .strip): return 20
+        case (.antonovka, .strip): return 32
         case (.seaside, .courtyard): return 106
+        case (.antonovka, .courtyard): return 144
         }
     }
 
-    /// Actor rest positions. Benches and beach towels are painted at these feet, so a
-    /// sleeper lies on furniture rather than on bare ground.
+    /// Actor rest positions. Benches, beach towels and roadside benches are painted
+    /// at these feet, so a sleeper lies on furniture rather than on bare ground.
     var restSpots: [CGPoint] {
         let stripLanes: [CGFloat] = [138, 222, 92, 268, 46, 314, 20, 340]
         switch (theme, layout) {
@@ -127,9 +133,9 @@ struct PlazaGeometry: Hashable, Sendable {
                 CGPoint(x: 80, y: 72),
                 CGPoint(x: 160, y: 72),
             ]
-        case (.seaside, .strip):
+        case (.seaside, .strip), (.antonovka, .strip):
             return stripLanes.map { CGPoint(x: $0, y: CGFloat(groundY + 8)) }
-        case (.seaside, .courtyard):
+        case (.seaside, .courtyard), (.antonovka, .courtyard):
             return [
                 CGPoint(x: 70, y: 40),
                 CGPoint(x: 170, y: 40),
@@ -146,7 +152,7 @@ struct PlazaGeometry: Hashable, Sendable {
     /// Where a thinking or running agent paces about.
     var strollSpots: [CGPoint] {
         switch (theme, layout) {
-        case (.agora, .strip), (.seaside, .strip):
+        case (.agora, .strip), (.seaside, .strip), (.antonovka, .strip):
             return restSpots.map { CGPoint(x: $0.x + 10, y: $0.y - 3) }
         case (.agora, .courtyard):
             return [
@@ -159,7 +165,7 @@ struct PlazaGeometry: Hashable, Sendable {
                 CGPoint(x: 96, y: 80),
                 CGPoint(x: 144, y: 80),
             ]
-        case (.seaside, .courtyard):
+        case (.seaside, .courtyard), (.antonovka, .courtyard):
             return [
                 CGPoint(x: 96, y: 54),
                 CGPoint(x: 144, y: 54),
@@ -175,7 +181,7 @@ struct PlazaGeometry: Hashable, Sendable {
 
     var exits: [CGPoint] {
         switch (theme, layout) {
-        case (.agora, .strip), (.seaside, .strip):
+        case (.agora, .strip), (.seaside, .strip), (.antonovka, .strip):
             let y = restSpots[0].y
             return [
                 CGPoint(x: 8, y: y),
@@ -188,7 +194,7 @@ struct PlazaGeometry: Hashable, Sendable {
                 CGPoint(x: 24, y: 168),
                 CGPoint(x: 216, y: 168),
             ]
-        case (.seaside, .courtyard):
+        case (.seaside, .courtyard), (.antonovka, .courtyard):
             return [
                 CGPoint(x: 24, y: 28),
                 CGPoint(x: 216, y: 28),
@@ -198,7 +204,7 @@ struct PlazaGeometry: Hashable, Sendable {
         }
     }
 
-    /// Olive trees on the agora, palms on the shore.
+    /// Olive trees on the agora, palms on the shore, sunflowers at the stop.
     var trees: [TreeSpec] {
         switch (theme, layout) {
         case (.agora, .strip):
@@ -231,12 +237,98 @@ struct PlazaGeometry: Hashable, Sendable {
                 TreeSpec(x: 18, y: 24, size: 1),
                 TreeSpec(x: 224, y: 28, size: 1),
             ]
+        case (.antonovka, .strip):
+            // Bases sit on the grass above the road, not on the asphalt. Higher y
+            // is further back in the field, now that the horizon sits nearer the sky.
+            return [
+                TreeSpec(x: 16, y: 10, size: 0),
+                TreeSpec(x: 22, y: 20, size: 0),
+                TreeSpec(x: 28, y: 18, size: 1),
+                TreeSpec(x: 40, y: 14, size: 0),
+                TreeSpec(x: 48, y: 12, size: 0),
+                TreeSpec(x: 58, y: 22, size: 1),
+                TreeSpec(x: 68, y: 9, size: 1),
+                TreeSpec(x: 74, y: 26, size: 0),
+                TreeSpec(x: 80, y: 16, size: 0),
+                TreeSpec(x: 92, y: 11, size: 0),
+                TreeSpec(x: 98, y: 22, size: 1),
+                TreeSpec(x: 104, y: 24, size: 1),
+                TreeSpec(x: 118, y: 12, size: 0),
+                TreeSpec(x: 124, y: 18, size: 0),
+                TreeSpec(x: 132, y: 20, size: 0),
+                TreeSpec(x: 208, y: 16, size: 0),
+                TreeSpec(x: 216, y: 14, size: 0),
+                TreeSpec(x: 228, y: 22, size: 0),
+                TreeSpec(x: 238, y: 9, size: 1),
+                TreeSpec(x: 242, y: 26, size: 0),
+                TreeSpec(x: 248, y: 18, size: 1),
+                TreeSpec(x: 258, y: 12, size: 0),
+                TreeSpec(x: 268, y: 12, size: 0),
+                TreeSpec(x: 282, y: 24, size: 1),
+                TreeSpec(x: 292, y: 10, size: 1),
+                TreeSpec(x: 300, y: 20, size: 0),
+                TreeSpec(x: 310, y: 16, size: 0),
+                TreeSpec(x: 322, y: 9, size: 1),
+                TreeSpec(x: 330, y: 24, size: 1),
+                TreeSpec(x: 338, y: 20, size: 0),
+            ]
+        case (.antonovka, .courtyard):
+            return [
+                TreeSpec(x: 22, y: 48, size: 2),
+                TreeSpec(x: 50, y: 34, size: 1),
+                TreeSpec(x: 12, y: 40, size: 0),
+                TreeSpec(x: 38, y: 60, size: 1),
+                TreeSpec(x: 64, y: 78, size: 0),
+                TreeSpec(x: 28, y: 88, size: 1),
+                TreeSpec(x: 16, y: 70, size: 0),
+                TreeSpec(x: 44, y: 100, size: 1),
+                TreeSpec(x: 8, y: 52, size: 0),
+                TreeSpec(x: 32, y: 42, size: 1),
+                TreeSpec(x: 56, y: 56, size: 0),
+                TreeSpec(x: 72, y: 92, size: 1),
+                TreeSpec(x: 20, y: 108, size: 0),
+                TreeSpec(x: 48, y: 76, size: 1),
+                TreeSpec(x: 6, y: 84, size: 0),
+                TreeSpec(x: 70, y: 36, size: 0),
+                TreeSpec(x: 10, y: 58, size: 1),
+                TreeSpec(x: 42, y: 50, size: 0),
+                TreeSpec(x: 18, y: 96, size: 1),
+                TreeSpec(x: 60, y: 44, size: 1),
+                TreeSpec(x: 36, y: 112, size: 0),
+                TreeSpec(x: 74, y: 68, size: 0),
+                TreeSpec(x: 4, y: 74, size: 1),
+                TreeSpec(x: 54, y: 88, size: 0),
+                TreeSpec(x: 214, y: 52, size: 2),
+                TreeSpec(x: 188, y: 30, size: 1),
+                TreeSpec(x: 198, y: 40, size: 0),
+                TreeSpec(x: 226, y: 64, size: 1),
+                TreeSpec(x: 176, y: 70, size: 0),
+                TreeSpec(x: 208, y: 90, size: 1),
+                TreeSpec(x: 224, y: 74, size: 0),
+                TreeSpec(x: 218, y: 102, size: 1),
+                TreeSpec(x: 168, y: 48, size: 1),
+                TreeSpec(x: 182, y: 86, size: 0),
+                TreeSpec(x: 196, y: 58, size: 1),
+                TreeSpec(x: 230, y: 80, size: 0),
+                TreeSpec(x: 172, y: 98, size: 1),
+                TreeSpec(x: 204, y: 34, size: 0),
+                TreeSpec(x: 220, y: 46, size: 1),
+                TreeSpec(x: 236, y: 94, size: 0),
+                TreeSpec(x: 160, y: 56, size: 0),
+                TreeSpec(x: 190, y: 74, size: 1),
+                TreeSpec(x: 210, y: 44, size: 0),
+                TreeSpec(x: 234, y: 70, size: 1),
+                TreeSpec(x: 178, y: 108, size: 0),
+                TreeSpec(x: 200, y: 82, size: 1),
+                TreeSpec(x: 228, y: 96, size: 0),
+                TreeSpec(x: 166, y: 36, size: 1),
+            ]
         }
     }
 
-    /// Strays that belong to the scenery, keeping out of the walking lanes. The shore has
-    /// none, because there the agents are the cats and a nameless one would just be
-    /// another agent you cannot account for.
+    /// Strays that belong to the scenery, keeping out of the walking lanes. The shore
+    /// and the stop have none, because there the agents are the animals and a nameless
+    /// one would just be another agent you cannot account for.
     var catSpots: [CGPoint] {
         switch (theme, layout) {
         case (.agora, .strip):
@@ -247,19 +339,20 @@ struct PlazaGeometry: Hashable, Sendable {
                 CGPoint(x: 70, y: 44),
                 CGPoint(x: 196, y: 118),
             ]
-        case (.seaside, _):
+        case (.seaside, _), (.antonovka, _):
             return []
         }
     }
 
     /// The bottom row of the bench or towel painted at a rest spot. Furniture is five
     /// pixels deep and a person stands ankle-deep in it; a cat is half as tall and has to
-    /// sit at the far edge, or the towel would cover half of it.
+    /// sit at the far edge, or the towel would cover half of it. A rabbit is in between.
     func furnitureY(for spot: CGPoint) -> Int {
         let spotY = Int(spot.y.rounded())
         switch theme {
         case .agora: return max(0, spotY - PixelArt.characterHeight / 2)
         case .seaside: return max(0, spotY - PixelArt.catHeight / 2 - 3)
+        case .antonovka: return max(0, spotY - PixelArt.rabbitHeight / 2)
         }
     }
 
@@ -273,7 +366,7 @@ struct PlazaGeometry: Hashable, Sendable {
     /// painted on, because a colonnade does not want clouds sliding through the beams.
     var clouds: [CloudSpec] {
         switch (theme, layout) {
-        case (.seaside, .strip):
+        case (.seaside, .strip), (.antonovka, .strip):
             let y = worldHeight - 5
             return [
                 CloudSpec(x: 36, y: y, size: 2, shape: .twin),
@@ -283,7 +376,7 @@ struct PlazaGeometry: Hashable, Sendable {
                 CloudSpec(x: 268, y: y, size: 2, shape: .puff),
                 CloudSpec(x: 322, y: y - 1, size: 2, shape: .wispy, flipped: true),
             ]
-        case (.seaside, .courtyard):
+        case (.seaside, .courtyard), (.antonovka, .courtyard):
             return [
                 CloudSpec(x: 54, y: worldHeight - 34, size: 7, shape: .bank),
                 CloudSpec(x: 148, y: worldHeight - 16, size: 9, shape: .anvil),
@@ -299,7 +392,9 @@ struct PlazaGeometry: Hashable, Sendable {
         case (.agora, .strip): return 26...32
         case (.agora, .courtyard): return 186...222
         case (.seaside, .strip): return 30...39
+        case (.antonovka, .strip): return 40...49
         case (.seaside, .courtyard): return 150...220
+        case (.antonovka, .courtyard): return 168...228
         }
     }
 }

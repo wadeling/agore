@@ -53,10 +53,10 @@ final class PlazaActor {
         // The world is drawn two or three times over, so the name is measured against the
         // twelve-pixel figure it belongs to rather than against the screen.
         label.fontSize = 6
-        label.fontColor = NSColor(calibratedWhite: 0.15, alpha: 1)
         label.verticalAlignmentMode = .top
         label.horizontalAlignmentMode = .center
-        label.position = CGPoint(x: 0, y: -(size.height / 2 + 2))
+        label.fontColor = NSColor(calibratedWhite: 0.15, alpha: 1)
+        label.position = CGPoint(x: 0, y: -(size.height / 2 + Self.labelGap(for: theme)))
         label.text = session.displayName
         label.zPosition = 2
         node.addChild(label)
@@ -108,9 +108,9 @@ final class PlazaActor {
         )))
         root.addChild(body)
 
-        // A sleeper's head is at the left end for a person and the right for a curled cat,
-        // and the Z's rise from whichever end that is.
-        let headX = theme == .seaside
+        // A sleeper's head is at the left end for a person or rabbit and the right
+        // for a curled cat, and the Z's rise from whichever end that is.
+        let headX = theme.actorsTurnToWalk
             ? width / 2 - 4 * scale
             : -width / 2 + 5 * scale
         for index in 0..<2 {
@@ -131,6 +131,15 @@ final class PlazaActor {
             root.addChild(z)
         }
         return root
+    }
+
+    /// World pixels between the figure's feet and the top of the name. Rabbits sit on
+    /// a busy field, so the label tucks in tighter than a person on marble.
+    private static func labelGap(for theme: PlazaTheme) -> CGFloat {
+        switch theme {
+        case .antonovka: return 0
+        case .agora, .seaside: return 2
+        }
     }
 
     func apply(_ session: AgentSession, anchors: PlazaAnchors, slot: Int) {
@@ -229,10 +238,10 @@ final class PlazaActor {
     }
 
     /// A cat is drawn in profile and has to turn around to walk the other way, while a
-    /// person is drawn face-on and reads the same either way. Turning mirrors the whole
-    /// node, so the name mirrors itself back to stay readable.
+    /// person or rabbit is drawn face-on and reads the same either way. Turning mirrors
+    /// the whole node, so the name mirrors itself back to stay readable.
     private func face(towards point: CGPoint) {
-        guard theme == .seaside, point.x != node.position.x else { return }
+        guard theme.actorsTurnToWalk, point.x != node.position.x else { return }
         let facing: CGFloat = point.x > node.position.x ? 1 : -1
         guard node.xScale != facing else { return }
         node.xScale = facing

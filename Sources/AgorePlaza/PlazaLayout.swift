@@ -15,7 +15,7 @@ public enum PlazaLayout: Hashable, Sendable {
 
     public var worldHeight: Int {
         switch self {
-        case .strip: return 42
+        case .strip: return 51
         case .courtyard: return 240
         }
     }

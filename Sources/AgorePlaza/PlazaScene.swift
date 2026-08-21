@@ -146,8 +146,9 @@ public final class PlazaScene: SKScene {
         addChild(node)
     }
 
-    /// Strays, not agents. On the shore the agents are cats themselves, so the geometry
-    /// hands back no spots there and the only cats on the sand have names under them.
+    /// Strays, not agents. On the shore and at the stop the agents are the animals
+    /// themselves, so the geometry hands back no spots there and the only ones on
+    /// stage have names under them.
     private func addCats() {
         for (index, spot) in geometry.catSpots.enumerated() {
             let cat = PlazaCat(variant: index, home: spot, geometry: geometry)
@@ -267,7 +268,7 @@ public final class PlazaScene: SKScene {
         ground.texture = PixelArt.plazaBackground(geometry, period: period)
         ground.texture?.filteringMode = .nearest
         for cloud in clouds {
-            cloud.node.texture = PixelArt.cloud(cloud.spec, period: period)
+            cloud.node.texture = PixelArt.cloud(cloud.spec, theme: theme, period: period)
             cloud.node.texture?.filteringMode = .nearest
         }
     }
@@ -315,7 +316,7 @@ public final class PlazaScene: SKScene {
     private func addClouds() {
         let scale = viewPixelScale()
         for spec in geometry.clouds {
-            let node = SKSpriteNode(texture: PixelArt.cloud(spec, period: period))
+            let node = SKSpriteNode(texture: PixelArt.cloud(spec, theme: theme, period: period))
             node.name = Self.decorName
             node.size = PixelArt.cloudSpriteSize(spec)
             var position = PixelArt.cloudPosition(spec)

@@ -278,12 +278,14 @@ public enum AgorePaths {
 }
 
 public enum AgoreConstants {
-    /// A slim strip that can sit above other windows all day without covering work.
-    public static let panelSize = CGSize(width: 720, height: 102)
-    /// Dock / first-launch window. Plaza area is 720×720 (3× the 240 courtyard).
-    public static let windowSize = CGSize(width: 720, height: 738)
     public static let plazaHeight: CGFloat = 84
     public static let statusHeight: CGFloat = 18
+    /// The original strip card: plaza plus the status band. The band now overlays
+    /// the bottom on hover instead of sitting under the art, but the window stays
+    /// this tall so the plaza can use the full card at 2×.
+    public static let panelSize = CGSize(width: 720, height: plazaHeight + statusHeight)
+    /// Dock / first-launch window. Plaza area is 720×720 (3× the 240 courtyard).
+    public static let windowSize = CGSize(width: 720, height: 738)
     public static let cornerRadius: CGFloat = 12
     /// The plaza floor is translucent so the desktop shows through; the actors stay opaque.
     public static let groundOpacity: CGFloat = 0.7
