@@ -134,10 +134,11 @@ final class PlazaActor {
     }
 
     /// World pixels between the figure's feet and the top of the name. Rabbits sit on
-    /// a busy field, so the label tucks in tighter than a person on marble.
+    /// a busy field, so the label tucks in tighter than a person on marble. A witch's
+    /// broom already fills the gap, so the name sits closer still.
     private static func labelGap(for theme: PlazaTheme) -> CGFloat {
         switch theme {
-        case .antonovka: return 0
+        case .antonovka, .koriko: return 0
         case .agora, .seaside: return 2
         }
     }
@@ -237,9 +238,9 @@ final class PlazaActor {
         node.texture = sleeping ? nil : bodyTexture
     }
 
-    /// A cat is drawn in profile and has to turn around to walk the other way, while a
-    /// person or rabbit is drawn face-on and reads the same either way. Turning mirrors
-    /// the whole node, so the name mirrors itself back to stay readable.
+    /// A cat or a witch is drawn in profile and has to turn around to walk the other
+    /// way, while a person or rabbit is drawn face-on and reads the same either way.
+    /// Turning mirrors the whole node, so the name mirrors itself back to stay readable.
     private func face(towards point: CGPoint) {
         guard theme.actorsTurnToWalk, point.x != node.position.x else { return }
         let facing: CGFloat = point.x > node.position.x ? 1 : -1

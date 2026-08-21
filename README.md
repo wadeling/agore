@@ -71,7 +71,7 @@ the courtyard window keeps it in view.
 
 ### Styles
 
-Three worlds, picked from **Style** in the status item menu or **View → Style** in the menu
+Four worlds, picked from **Style** in the status item menu or **View → Style** in the menu
 bar, and remembered across launches:
 
 | Style | The plaza is | You are |
@@ -79,10 +79,11 @@ bar, and remembered across launches:
 | Greek Agora | Marble paving under a colonnade, a fountain, olive trees, stone benches | A pixel person, with a couple of stray cats loafing about |
 | Sunny Seaside | A beach under a big sky, surf and a bay, palms, a parasol, beach towels | A pixel cat, a different coat for each agent |
 | Antonovka Stop | A country road through sunflowers, a bus shelter under a wide sky | A pixel rabbit, a different outfit for each agent |
+| Koriko Sky | Open blue sky, a clock tower, scattered drifting clouds | A witch girl on a broom |
 
-All three keep the same daylight cycle and read the same activity; only the inhabitants change,
-so a cat or a rabbit sits, hops about and curls up asleep wherever a person would have stood,
-strolled and lain down. Switching styles repaints the plaza and everyone walks back in.
+All four keep the same daylight cycle and read the same activity; only the inhabitants change,
+so a cat, a rabbit or a witch sits, hops or flies about and curls up asleep wherever a person
+would have stood, strolled and lain down. Switching styles repaints the plaza and everyone walks back in.
 
 ### What the pixel people are doing
 
@@ -99,7 +100,7 @@ strolled and lain down. Switching styles repaints the plaza and everyone walks b
 Tool names are matched case-insensitively, because Cursor spells them `Read` and opencode
 spells them `read`.
 
-One pixel person — or one cat, or one rabbit — per client *and agent*, not per conversation: a Mac running
+One pixel person — or one cat, or one rabbit, or one witch — per client *and agent*, not per conversation: a Mac running
 Cursor and opencode side by side puts two of them on the plaza, named `wade-cs` and
 `wade-oc` after your nickname (default: this Mac's hostname) and which agent each one is.
 A name has to stay narrow enough to read the people either side of it, so the agent is a

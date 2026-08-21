@@ -48,36 +48,42 @@ struct PlazaGeometry: Hashable, Sendable {
     var isStrip: Bool { layout == .strip }
 
     /// Where the ground stops. Above it the agora shows its colonnade, the shore
-    /// shows open water, and the stop shows sky over the sunflower field; actors
-    /// stay below the line in every world.
+    /// shows open water, and the stop shows sky over the sunflower field. Koriko
+    /// is sky all the way down, so the line sits at zero and actors fly in it.
     var horizonY: Int {
         switch (theme, layout) {
         case (.agora, .strip): return 28
         case (.agora, .courtyard): return 196
         case (.seaside, .strip): return 26
         case (.antonovka, .strip): return 38
+        case (.koriko, .strip): return 0
         case (.seaside, .courtyard): return 120
         case (.antonovka, .courtyard): return 160
+        case (.koriko, .courtyard): return 0
         }
     }
 
-    /// A near edge for the paving band / dry sand line / roadside verge.
+    /// A near edge for the paving band / dry sand line / roadside verge / cloud deck.
     var groundY: Int {
         switch (theme, layout) {
         case (.agora, .strip): return 12
         case (.agora, .courtyard): return 48
         case (.seaside, .strip), (.antonovka, .strip): return 10
+        case (.koriko, .strip): return 8
         case (.seaside, .courtyard), (.antonovka, .courtyard): return 40
+        case (.koriko, .courtyard): return 32
         }
     }
 
-    /// Fountain, parasol, or bus shelter: the one prop actors walk around.
+    /// Fountain, parasol, bus shelter, or clock tower: the one prop actors walk around.
     var centerpieceCenter: CGPoint {
         switch (theme, layout) {
         case (.agora, .strip): return CGPoint(x: 180, y: 12)
         case (.agora, .courtyard): return CGPoint(x: 120, y: 88)
         case (.seaside, .strip), (.antonovka, .strip): return CGPoint(x: 180, y: 11)
+        case (.koriko, .strip): return CGPoint(x: 180, y: 18)
         case (.seaside, .courtyard), (.antonovka, .courtyard): return CGPoint(x: 120, y: 82)
+        case (.koriko, .courtyard): return CGPoint(x: 120, y: 108)
         }
     }
 
@@ -91,7 +97,9 @@ struct PlazaGeometry: Hashable, Sendable {
         case (.agora, .courtyard): return 72...108
         case (.seaside, .strip): return 0...24
         case (.antonovka, .strip): return 0...28
+        case (.koriko, .strip): return 8...32
         case (.seaside, .courtyard), (.antonovka, .courtyard): return 66...102
+        case (.koriko, .courtyard): return 90...130
         }
     }
 
@@ -100,7 +108,9 @@ struct PlazaGeometry: Hashable, Sendable {
         case (.agora, .strip): return 16
         case (.agora, .courtyard): return 28
         case (.seaside, .strip), (.antonovka, .strip): return 12
+        case (.koriko, .strip): return 14
         case (.seaside, .courtyard), (.antonovka, .courtyard): return 24
+        case (.koriko, .courtyard): return 28
         }
     }
 
@@ -110,13 +120,16 @@ struct PlazaGeometry: Hashable, Sendable {
         case (.agora, .courtyard): return 170
         case (.seaside, .strip): return 20
         case (.antonovka, .strip): return 32
+        case (.koriko, .strip): return 36
         case (.seaside, .courtyard): return 106
         case (.antonovka, .courtyard): return 144
+        case (.koriko, .courtyard): return 190
         }
     }
 
     /// Actor rest positions. Benches, beach towels and roadside benches are painted
     /// at these feet, so a sleeper lies on furniture rather than on bare ground.
+    /// Koriko has no floor; the spots are just places to hover in the sky.
     var restSpots: [CGPoint] {
         let stripLanes: [CGFloat] = [138, 222, 92, 268, 46, 314, 20, 340]
         switch (theme, layout) {
@@ -135,6 +148,9 @@ struct PlazaGeometry: Hashable, Sendable {
             ]
         case (.seaside, .strip), (.antonovka, .strip):
             return stripLanes.map { CGPoint(x: $0, y: CGFloat(groundY + 8)) }
+        case (.koriko, .strip):
+            let heights: [CGFloat] = [20, 26, 18, 30, 22, 16, 28, 24]
+            return zip(stripLanes, heights).map { CGPoint(x: $0, y: $1) }
         case (.seaside, .courtyard), (.antonovka, .courtyard):
             return [
                 CGPoint(x: 70, y: 40),
@@ -146,13 +162,24 @@ struct PlazaGeometry: Hashable, Sendable {
                 CGPoint(x: 36, y: 96),
                 CGPoint(x: 204, y: 96),
             ]
+        case (.koriko, .courtyard):
+            return [
+                CGPoint(x: 70, y: 56),
+                CGPoint(x: 170, y: 64),
+                CGPoint(x: 46, y: 110),
+                CGPoint(x: 194, y: 98),
+                CGPoint(x: 86, y: 150),
+                CGPoint(x: 154, y: 142),
+                CGPoint(x: 36, y: 168),
+                CGPoint(x: 204, y: 176),
+            ]
         }
     }
 
     /// Where a thinking or running agent paces about.
     var strollSpots: [CGPoint] {
         switch (theme, layout) {
-        case (.agora, .strip), (.seaside, .strip), (.antonovka, .strip):
+        case (.agora, .strip), (.seaside, .strip), (.antonovka, .strip), (.koriko, .strip):
             return restSpots.map { CGPoint(x: $0.x + 10, y: $0.y - 3) }
         case (.agora, .courtyard):
             return [
@@ -176,12 +203,23 @@ struct PlazaGeometry: Hashable, Sendable {
                 CGPoint(x: 88, y: 62),
                 CGPoint(x: 152, y: 62),
             ]
+        case (.koriko, .courtyard):
+            return [
+                CGPoint(x: 96, y: 80),
+                CGPoint(x: 144, y: 88),
+                CGPoint(x: 64, y: 128),
+                CGPoint(x: 176, y: 136),
+                CGPoint(x: 108, y: 48),
+                CGPoint(x: 132, y: 52),
+                CGPoint(x: 88, y: 164),
+                CGPoint(x: 152, y: 172),
+            ]
         }
     }
 
     var exits: [CGPoint] {
         switch (theme, layout) {
-        case (.agora, .strip), (.seaside, .strip), (.antonovka, .strip):
+        case (.agora, .strip), (.seaside, .strip), (.antonovka, .strip), (.koriko, .strip):
             let y = restSpots[0].y
             return [
                 CGPoint(x: 8, y: y),
@@ -201,10 +239,18 @@ struct PlazaGeometry: Hashable, Sendable {
                 CGPoint(x: 24, y: 100),
                 CGPoint(x: 216, y: 100),
             ]
+        case (.koriko, .courtyard):
+            return [
+                CGPoint(x: 24, y: 40),
+                CGPoint(x: 216, y: 40),
+                CGPoint(x: 24, y: 180),
+                CGPoint(x: 216, y: 180),
+            ]
         }
     }
 
     /// Olive trees on the agora, palms on the shore, sunflowers at the stop.
+    /// Koriko is open sky, so it has none.
     var trees: [TreeSpec] {
         switch (theme, layout) {
         case (.agora, .strip):
@@ -323,12 +369,14 @@ struct PlazaGeometry: Hashable, Sendable {
                 TreeSpec(x: 228, y: 96, size: 0),
                 TreeSpec(x: 166, y: 36, size: 1),
             ]
+        case (.koriko, .strip), (.koriko, .courtyard):
+            return []
         }
     }
 
-    /// Strays that belong to the scenery, keeping out of the walking lanes. The shore
-    /// and the stop have none, because there the agents are the animals and a nameless
-    /// one would just be another agent you cannot account for.
+    /// Strays that belong to the scenery, keeping out of the walking lanes. The shore,
+    /// the stop and Koriko have none, because there the agents are the inhabitants and
+    /// a nameless one would just be another agent you cannot account for.
     var catSpots: [CGPoint] {
         switch (theme, layout) {
         case (.agora, .strip):
@@ -339,31 +387,33 @@ struct PlazaGeometry: Hashable, Sendable {
                 CGPoint(x: 70, y: 44),
                 CGPoint(x: 196, y: 118),
             ]
-        case (.seaside, _), (.antonovka, _):
+        case (.seaside, _), (.antonovka, _), (.koriko, _):
             return []
         }
     }
 
     /// The bottom row of the bench or towel painted at a rest spot. Furniture is five
     /// pixels deep and a person stands ankle-deep in it; a cat is half as tall and has to
-    /// sit at the far edge, or the towel would cover half of it. A rabbit is in between.
+    /// sit at the far edge, or the towel would cover half of it. A rabbit is in between,
+    /// and a witch sits on her broom just above the puff.
     func furnitureY(for spot: CGPoint) -> Int {
         let spotY = Int(spot.y.rounded())
         switch theme {
         case .agora: return max(0, spotY - PixelArt.characterHeight / 2)
         case .seaside: return max(0, spotY - PixelArt.catHeight / 2 - 3)
         case .antonovka: return max(0, spotY - PixelArt.rabbitHeight / 2)
+        case .koriko: return max(0, spotY - PixelArt.witchHeight / 2)
         }
     }
 
     /// Where the sea gives way to sky. Clouds live above this line so they cannot
-    /// sit on a palm.
+    /// sit on a palm. Koriko is all sky, so the line is only used for drifting weather.
     var skyY: Int {
         horizonY + max(6, (worldHeight - horizonY) * 2 / 5)
     }
 
-    /// Only the shore has a sky wide enough to watch. The agora keeps its weather
-    /// painted on, because a colonnade does not want clouds sliding through the beams.
+    /// The agora keeps its weather painted on, because a colonnade does not want
+    /// clouds sliding through the beams. Everywhere else the sky is wide enough to watch.
     var clouds: [CloudSpec] {
         switch (theme, layout) {
         case (.seaside, .strip), (.antonovka, .strip):
@@ -376,6 +426,8 @@ struct PlazaGeometry: Hashable, Sendable {
                 CloudSpec(x: 268, y: y, size: 2, shape: .puff),
                 CloudSpec(x: 322, y: y - 1, size: 2, shape: .wispy, flipped: true),
             ]
+        case (.koriko, .strip), (.koriko, .courtyard):
+            return scatteredSkyClouds()
         case (.seaside, .courtyard), (.antonovka, .courtyard):
             return [
                 CloudSpec(x: 54, y: worldHeight - 34, size: 7, shape: .bank),
@@ -387,14 +439,39 @@ struct PlazaGeometry: Hashable, Sendable {
         }
     }
 
+    /// A handful of clouds scattered through the sky rather than lined up along the
+    /// top. The sequence is seeded from the world size, so a repaint keeps the same
+    /// weather instead of jumping every frame.
+    private func scatteredSkyClouds() -> [CloudSpec] {
+        var seed = worldWidth &* 2654435761 &+ worldHeight &* 1597334677 &+ 0xC10D
+        func next() -> Int {
+            seed = seed &* 1103515245 &+ 12345
+            return seed & Int.max
+        }
+        let shapes: [CloudShape] = [.puff, .wispy, .twin, .bank, .anvil]
+        let count = isStrip ? 7 : 8
+        let yLo = isStrip ? 8 : 28
+        let yHi = worldHeight - (isStrip ? 6 : 20)
+        let ySpan = max(1, yHi - yLo)
+        return (0..<count).map { _ in
+            let x = 18 + next() % max(1, worldWidth - 36)
+            let y = yLo + next() % ySpan
+            let size = isStrip ? 2 + next() % 3 : 4 + next() % 5
+            let shape = shapes[next() % shapes.count]
+            return CloudSpec(x: x, y: y, size: size, shape: shape, flipped: next() % 2 == 0)
+        }
+    }
+
     var birdAltitude: ClosedRange<CGFloat> {
         switch (theme, layout) {
         case (.agora, .strip): return 26...32
         case (.agora, .courtyard): return 186...222
         case (.seaside, .strip): return 30...39
         case (.antonovka, .strip): return 40...49
+        case (.koriko, .strip): return 16...44
         case (.seaside, .courtyard): return 150...220
         case (.antonovka, .courtyard): return 168...228
+        case (.koriko, .courtyard): return 40...220
         }
     }
 }

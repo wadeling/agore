@@ -149,6 +149,7 @@ extension PixelArt {
     private static func cloudFill(theme: PlazaTheme, period: PlazaPeriod) -> UInt32 {
         switch theme {
         case .antonovka: return Meadow.tint(for: period).cloud
+        case .koriko: return Sky.tint(for: period).cloud
         default: return Shore.tint(for: period).cloud
         }
     }
@@ -156,6 +157,7 @@ extension PixelArt {
     private static func cloudShade(theme: PlazaTheme, period: PlazaPeriod) -> UInt32 {
         switch theme {
         case .antonovka: return Meadow.tint(for: period).cloudShade
+        case .koriko: return Sky.tint(for: period).cloudShade
         default: return Shore.tint(for: period).cloudShade
         }
     }
