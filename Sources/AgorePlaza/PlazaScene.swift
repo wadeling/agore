@@ -191,15 +191,6 @@ public final class PlazaScene: SKScene {
     /// only once something has brought it forward.
     var pointerInside = false
 
-    /// Walking, fidgeting, a bird, or the pointer resting on someone. An idle strip
-    /// drops its display link; the last frame stays on screen.
-    var needsAnimation: Bool {
-        if pointerInside { return true }
-        if birdFlight != nil { return true }
-        if !leaving.isEmpty { return true }
-        return actors.values.contains { $0.needsAnimation }
-    }
-
     func refreshHover() {
         guard pointerInside, let view = view, let window = view.window, window.isVisible else {
             hover(nil)
@@ -235,7 +226,6 @@ public final class PlazaScene: SKScene {
     }
 
     public override func update(_ currentTime: TimeInterval) {
-        (view as? PlazaView)?.consumeFirstFrame()
         now = currentTime
         if skyEpoch == 0 { skyEpoch = currentTime }
         if lastTickAt == 0 { lastTickAt = currentTime }

@@ -4,20 +4,18 @@ import AgoreCore
 
 public final class PlazaView: SKView {
     public let plazaScene: PlazaScene
-    private let isStrip: Bool
-    /// Window-level pause (hidden / occluded). The strip may still rest on top of
-    /// this when nobody on stage is moving.
+    private let layout: PlazaLayout
+    private var isStrip: Bool { layout == .strip }
+    /// Window-level pause (hidden / occluded). A visible strip keeps drawing even
+    /// when nobody is looking at it; only a buried window stands still.
     private var windowPaused = true
-    /// An idle strip still has to paint once when it appears, or SpriteKit would
-    /// leave a blank metal view until someone walked.
-    private var needsFirstFrame = true
     /// The strip's status line watches the same pointer the scene does, because a
     /// non-frontmost panel does not always deliver mouse-moved events to its parent.
     public var onPointerChange: (() -> Void)?
 
     public init(frame frameRect: NSRect, layout: PlazaLayout, theme: PlazaTheme = .current) {
         plazaScene = PlazaScene(layout: layout, theme: theme)
-        isStrip = layout == .strip
+        self.layout = layout
         super.init(frame: frameRect)
         ignoresSiblingOrder = true
         allowsTransparency = layout == .strip
@@ -25,9 +23,8 @@ public final class PlazaView: SKView {
         showsNodeCount = false
         // Two SKViews on one display do not share it fairly. Measured: with the strip
         // asking for 30fps the courtyard went whole half-minutes without a single frame.
-        // The strip now draws only while someone is moving, and then at 8fps — an idle
-        // pinned strip used to keep a 60Hz display link alive for a 20fps Metal present,
-        // which is what held Activity Monitor at 3–4%.
+        // The strip stays at 8fps whether or not anyone is looking — enough for
+        // clouds and sleepers to keep moving without a 60Hz link.
         preferredFramesPerSecond = layout.framesPerSecond
         // A zero-size first layout makes SpriteKit compute an empty visible rect;
         // the big ground sprite still intersects it, but the 16×20 actors get culled.
@@ -88,7 +85,6 @@ public final class PlazaView: SKView {
 
     public func apply(theme: PlazaTheme) {
         plazaScene.apply(theme: theme)
-        needsFirstFrame = true
         applyRunState()
     }
 
@@ -100,7 +96,6 @@ public final class PlazaView: SKView {
     /// itself when the window is occluded or the display sleeps. Clearing only one of
     /// them leaves every action standing still, so both move together.
     public func setPaused(_ paused: Bool) {
-        if windowPaused && !paused { needsFirstFrame = true }
         windowPaused = paused
         applyRunState()
     }
@@ -109,17 +104,13 @@ public final class PlazaView: SKView {
         isPaused || plazaScene.isPaused
     }
 
-    /// A pinned strip that is only showing sleepers does not need a display link.
-    /// Courtyard windows keep drawing whenever they are on screen.
+    /// A visible strip keeps its display link at 8fps. Courtyard windows keep
+    /// drawing whenever they are on screen.
     func applyRunState() {
         refreshPointerInside()
-        let run = !windowPaused && (!isStrip || plazaScene.needsAnimation || needsFirstFrame)
+        let run = !windowPaused
         isPaused = !run
         plazaScene.isPaused = !run
-    }
-
-    func consumeFirstFrame() {
-        needsFirstFrame = false
     }
 
     public func sync(store: PresenceStore) {
