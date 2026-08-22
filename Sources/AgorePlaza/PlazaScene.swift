@@ -10,6 +10,7 @@ public final class PlazaScene: SKScene {
     private var leaving: [PlazaActor] = []
     private var cats: [PlazaCat] = []
     private var clouds: [DriftingCloud] = []
+    private var floes: [DriftingFloe] = []
     private var birdNode: SKSpriteNode?
     private var birdFlight: BirdFlight?
     private var slots: [String: Int] = [:]
@@ -32,6 +33,12 @@ public final class PlazaScene: SKScene {
     private struct DriftingCloud {
         let node: SKSpriteNode
         let spec: CloudSpec
+        let origin: Double
+    }
+
+    private struct DriftingFloe {
+        let node: SKSpriteNode
+        let spec: IceSpec
         let origin: Double
     }
 
@@ -83,6 +90,9 @@ public final class PlazaScene: SKScene {
         for cloud in clouds {
             cloud.node.alpha = alpha
         }
+        for floe in floes {
+            floe.node.alpha = alpha
+        }
     }
 
     /// Repaints the plaza in another style. Everyone on stage walks back in from a gate
@@ -116,13 +126,16 @@ public final class PlazaScene: SKScene {
         }
         cats.removeAll()
         clouds.removeAll()
+        floes.removeAll()
         birdNode = nil
         birdFlight = nil
         addDecor()
     }
 
     private func addDecor() {
-        addCenterpiece()
+        if theme != .iceberg {
+            addCenterpiece()
+        }
         addAmbient()
         addCats()
     }
@@ -146,9 +159,9 @@ public final class PlazaScene: SKScene {
         addChild(node)
     }
 
-    /// Strays, not agents. On the shore and at the stop the agents are the animals
-    /// themselves, so the geometry hands back no spots there and the only ones on
-    /// stage have names under them.
+    /// Strays, not agents. On the shore, at the stop and on the floe the agents
+    /// are the animals themselves, so the geometry hands back no spots there and
+    /// the only ones on stage have names under them.
     private func addCats() {
         for (index, spot) in geometry.catSpots.enumerated() {
             let cat = PlazaCat(variant: index, home: spot, geometry: geometry)
@@ -235,6 +248,7 @@ public final class PlazaScene: SKScene {
             refreshPeriod()
         }
         driftClouds(elapsed: currentTime - skyEpoch)
+        driftFloes(elapsed: currentTime - skyEpoch)
         stepBird()
         if currentTime - lastTickAt >= 0.18 {
             lastTickAt = currentTime
@@ -261,9 +275,17 @@ public final class PlazaScene: SKScene {
             cloud.node.texture = PixelArt.cloud(cloud.spec, theme: theme, period: period)
             cloud.node.texture?.filteringMode = .nearest
         }
+        for floe in floes {
+            floe.node.texture = PixelArt.floe(floe.spec, period: period)
+            floe.node.texture?.filteringMode = .nearest
+        }
     }
 
     private func addAmbient() {
+        if theme == .iceberg {
+            addFloes()
+            return
+        }
         addClouds()
         for tree in geometry.trees {
             let origin = PixelArt.foliageTop(tree, theme: theme)
@@ -340,6 +362,57 @@ public final class PlazaScene: SKScene {
                 worldWidth: geometry.worldWidth,
                 scale: scale
             ))
+        }
+    }
+
+    /// The same crossing the clouds use, so ice does not race past them in
+    /// spirit. Size only skews the pace, so a shard and a berg do not travel
+    /// as a raft.
+    private func addFloes() {
+        let scale = viewPixelScale()
+        for spec in geometry.floes {
+            let node = SKSpriteNode(texture: PixelArt.floe(spec, period: period))
+            node.name = Self.decorName
+            node.size = PixelArt.floeSpriteSize(spec)
+            var position = PixelArt.floePosition(spec)
+            position.x = CGFloat(CloudDrift.snapped(Double(position.x), scale: scale))
+            position.y = CGFloat(CloudDrift.snapped(Double(position.y), scale: scale))
+            node.position = position
+            node.zPosition = 2
+            node.alpha = backdropOpacity
+            node.texture?.filteringMode = .nearest
+            addChild(node)
+            floes.append(DriftingFloe(node: node, spec: spec, origin: Double(position.x)))
+        }
+        skyEpoch = now
+    }
+
+    private func driftFloes(elapsed: TimeInterval) {
+        let scale = viewPixelScale()
+        for floe in floes {
+            floe.node.position.x = CGFloat(CloudDrift.drifted(
+                origin: floe.origin,
+                elapsed: elapsed,
+                pixelsPerSecond: CloudDrift.pixelsPerSecond(
+                    size: floeDriftSize(floe.spec.size),
+                    worldWidth: geometry.worldWidth,
+                    isStrip: geometry.isStrip
+                ),
+                spriteWidth: Double(floe.node.size.width),
+                worldWidth: geometry.worldWidth,
+                scale: scale
+            ))
+        }
+    }
+
+    /// CloudDrift's size scale is 2...9. Ice has four sizes, so they are
+    /// spread across that range instead of bunching at the bottom.
+    private func floeDriftSize(_ size: Int) -> Int {
+        switch min(max(size, 0), 3) {
+        case 0: return 3
+        case 1: return 4
+        case 2: return 6
+        default: return 8
         }
     }
 

@@ -242,12 +242,15 @@ enum PixelArt {
         case bird(theme: PlazaTheme, phase: Int)
         case leaf(theme: PlazaTheme)
         case cloud(theme: PlazaTheme, size: Int, shape: CloudShape, period: PlazaPeriod)
+        case floe(size: Int, period: PlazaPeriod)
         case cat(variant: Int, pose: CatPose, phase: Int, small: Bool)
         case catSleeper(variant: Int, phase: Int)
         case rabbit(variant: Int, pose: RabbitPose, phase: Int, small: Bool)
         case rabbitSleeper(variant: Int, phase: Int)
         case witch(variant: Int, pose: WitchPose, phase: Int, small: Bool)
         case witchSleeper(variant: Int, phase: Int)
+        case penguin(variant: Int, pose: PenguinPose, phase: Int, small: Bool)
+        case penguinSleeper(variant: Int, phase: Int)
         case character(skin: UInt32, hair: UInt32, tunic: UInt32, kind: ActivityKind, phase: Int, small: Bool)
     }
 
@@ -265,6 +268,7 @@ enum PixelArt {
             case .seaside: return buildSeasideBackground(geometry, period: period)
             case .antonovka: return buildAntonovkaBackground(geometry, period: period)
             case .koriko: return buildKorikoBackground(geometry, period: period)
+            case .iceberg: return buildIcebergBackground(geometry, period: period)
             }
         }
     }
@@ -593,6 +597,8 @@ enum PixelArt {
             return CGPoint(x: CGFloat(tree.x), y: CGFloat(tree.y + [4, 7, 11][size] + [2, 3, 4][size]))
         case .koriko:
             return CGPoint(x: CGFloat(tree.x), y: CGFloat(tree.y + [4, 6, 9][size] + 2))
+        case .iceberg:
+            return CGPoint(x: CGFloat(tree.x), y: CGFloat(tree.y + [5, 9, 15][size]))
         }
     }
 
@@ -623,6 +629,7 @@ enum PixelArt {
             case .seaside: return buildParasolFrame(wobble)
             case .antonovka: return buildBusStopFrame(wobble)
             case .koriko: return buildClockTowerFrame(wobble)
+            case .iceberg: return buildIcebergFrame(wobble)
             }
         }
     }
@@ -682,8 +689,9 @@ enum PixelArt {
     }
 
     /// A theme decides who inhabits the plaza: people on the agora, cats on the shore,
-    /// rabbits at the stop, witches in Koriko. Mapping an activity onto a pose lives
-    /// here, so an actor only has to say whether it is currently on the move.
+    /// rabbits at the stop, witches in Koriko, penguins on the floe. Mapping an
+    /// activity onto a pose lives here, so an actor only has to say whether it is
+    /// currently on the move.
     static func actorSize(theme: PlazaTheme, small: Bool) -> CGSize {
         switch theme {
         case .agora:
@@ -696,6 +704,8 @@ enum PixelArt {
             return rabbitSize(small: small)
         case .koriko:
             return witchSize(small: small)
+        case .iceberg:
+            return penguinSize(small: small)
         }
     }
 
@@ -719,6 +729,8 @@ enum PixelArt {
             return rabbit(variant: hash, pose: moving ? .walking : .sitting, frame: frame, small: small)
         case .koriko:
             return witch(variant: hash, pose: moving ? .flying : .sitting, frame: frame, small: small)
+        case .iceberg:
+            return penguin(variant: hash, pose: moving ? .waddling : .sitting, frame: frame, small: small)
         }
     }
 
@@ -728,6 +740,7 @@ enum PixelArt {
         case .seaside: return catSleeper(variant: hash, frame: frame)
         case .antonovka: return rabbitSleeper(variant: hash, frame: frame)
         case .koriko: return witchSleeper(variant: hash, frame: frame)
+        case .iceberg: return penguinSleeper(variant: hash, frame: frame)
         }
     }
 
@@ -737,6 +750,7 @@ enum PixelArt {
         case .seaside: return CGSize(width: catSleeperWidth, height: catSleeperHeight)
         case .antonovka: return CGSize(width: rabbitSleeperWidth, height: rabbitSleeperHeight)
         case .koriko: return CGSize(width: witchSleeperWidth, height: witchSleeperHeight)
+        case .iceberg: return CGSize(width: penguinSleeperWidth, height: penguinSleeperHeight)
         }
     }
 
@@ -829,7 +843,7 @@ enum PixelArt {
         var canvas = PixelCanvas(width: 7, height: 5, fill: Palette.clear)
         let feather: UInt32
         switch theme {
-        case .seaside, .antonovka, .koriko: feather = Shore.gull
+        case .seaside, .antonovka, .koriko, .iceberg: feather = Shore.gull
         case .agora: feather = Palette.ink
         }
         canvas.fill(2, 2, 3, 1, feather)
@@ -844,7 +858,7 @@ enum PixelArt {
             canvas.fill(0, 2, 2, 1, feather)
             canvas.fill(5, 2, 2, 1, feather)
         }
-        if theme == .seaside || theme == .antonovka || theme == .koriko {
+        if theme == .seaside || theme == .antonovka || theme == .koriko || theme == .iceberg {
             canvas.set(0, 2, Palette.ink)
             canvas.set(6, 2, Palette.ink)
         }
@@ -874,6 +888,12 @@ enum PixelArt {
             canvas.set(1, 1, Sky.sparkle)
             canvas.set(1, 2, Sky.sparkleGold)
             canvas.set(0, 1, Sky.cloud)
+        case .iceberg:
+            canvas.set(1, 1, Floe.iceTop)
+            canvas.set(1, 2, Floe.iceTop)
+            canvas.set(0, 1, Floe.iceLit)
+            canvas.set(2, 1, Floe.iceLit)
+            canvas.set(1, 0, Floe.iceTop)
         }
         return canvas.texture()
     }

@@ -117,6 +117,8 @@ plaza_files = [
     "Sources/AgorePlaza/PixelArtRabbit.swift",
     "Sources/AgorePlaza/PixelArtKoriko.swift",
     "Sources/AgorePlaza/PixelArtWitch.swift",
+    "Sources/AgorePlaza/PixelArtIceberg.swift",
+    "Sources/AgorePlaza/PixelArtPenguin.swift",
     "Sources/AgorePlaza/PlazaLayout.swift",
     "Sources/AgorePlaza/PlazaGeometry.swift",
     "Sources/AgorePlaza/PlazaActor.swift",

@@ -109,7 +109,8 @@ final class PlazaActor {
         root.addChild(body)
 
         // A sleeper's head is at the left end for a person or rabbit and the right
-        // for a curled cat, and the Z's rise from whichever end that is.
+        // for a curled cat or a standing penguin, and the Z's rise from whichever
+        // end that is.
         let headX = theme.actorsTurnToWalk
             ? width / 2 - 4 * scale
             : -width / 2 + 5 * scale
@@ -139,7 +140,7 @@ final class PlazaActor {
     private static func labelGap(for theme: PlazaTheme) -> CGFloat {
         switch theme {
         case .antonovka, .koriko: return 0
-        case .agora, .seaside: return 2
+        case .agora, .seaside, .iceberg: return 2
         }
     }
 
